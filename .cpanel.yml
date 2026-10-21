@@ -1,0 +1,36 @@
+---
+# cPanel Git Version Control deployment.
+#
+# The repository is checked out directly at the app path below, so no
+# file copy step is needed — these tasks run inside the checkout after
+# each pull.
+#
+# One-time setup on the server:
+#   1. Upload a production .env to the repository path (it is gitignored
+#      and survives checkouts).
+#   2. Point the subdomain's document root at:
+#        /home/axumcoff/democrm.axumcode.com/public
+#      (cPanel > Domains > Manage > Document Root).
+#
+# vendor/ and public/build/ are committed to the repo, so no composer
+# install or npm build runs on the server.
+#
+# If `php` is not on PATH, use the full binary path, e.g.
+#   /opt/cpanel/ea-php83/root/usr/bin/php
+
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/axumcoff/democrm.axumcode.com
+    - cd $DEPLOYPATH
+
+    - mkdir -p storage/logs storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+
+    - php artisan storage:link --force
+
+    - php artisan migrate --force
+
+    # NOTE: route:cache / optimize are intentionally NOT run — routes/web.php
+    # contains closure routes which cannot be serialized.
+    - php artisan config:cache
+    - php artisan event:cache
+    - php artisan view:cache
