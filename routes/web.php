@@ -20,6 +20,18 @@ Route::match(['get', 'post'], '/demo/reset', function () {
     return redirect('/');
 })->name('demo.reset');
 
+Route::get('/optimize', function () {
+    Artisan::call('optimize');
+
+    return Artisan::output();
+})->name('optimize');
+
+Route::get('/optimize-clear', function () {
+    Artisan::call('optimize:clear');
+
+    return Artisan::output();
+})->name('optimize.clear');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
 });

@@ -44,11 +44,11 @@ export default function Personas({ personas }: { personas: Persona[] }) {
                 key={persona.id}
                 type="button"
                 onClick={() => pick(persona.id)}
-                className="text-left transition-transform hover:-translate-y-0.5"
+                className="w-full min-w-0 text-left transition-transform hover:-translate-y-0.5"
             >
                 <Card className="h-full transition-colors hover:border-primary/50 hover:shadow-md">
-                    <CardContent className="flex items-center gap-4">
-                        <div className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
+                    <CardContent className="flex items-center gap-3 px-4 sm:gap-4 sm:px-6">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary sm:size-12">
                             {getInitials(persona.name)}
                         </div>
                         <div className="min-w-0 flex-1">
