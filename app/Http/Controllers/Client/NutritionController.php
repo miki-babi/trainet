@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Food;
 use App\Models\FoodLog;
 use App\Models\FoodLogItem;
+use App\Models\Meal;
 use App\Models\NutritionAssignment;
 use App\Models\NutritionTarget;
 use App\Models\WaterLog;
@@ -42,12 +43,33 @@ class NutritionController extends Controller
             'fat_g' => (float) $logs->flatMap->items->sum('fat_g'),
         ];
 
-        $planDay = NutritionAssignment::query()
-            ->with('planVersion.days.meals.items.food', 'planVersion.days.meals.items.portion')
+        $assignment = NutritionAssignment::query()
+            ->with(
+                'planVersion.days.meals.items.food',
+                'planVersion.days.meals.items.portion',
+                'planVersion.days.meals.items.recipe',
+            )
             ->where('client_id', $client->id)
             ->where('status', 'active')
-            ->first()
-            ?->planVersion?->days?->first();
+            ->first();
+
+        // Rotate through the plan's days based on how far into the assignment we are.
+        $planDay = null;
+        $days = $assignment?->planVersion?->days;
+        if ($days?->isNotEmpty()) {
+            $offset = $assignment->starts_on
+                ? max(0, (int) $assignment->starts_on->diffInDays($date))
+                : 0;
+            $planDay = $days->get($offset % $days->count());
+        }
+
+        // Mark which plan items are already logged so meals can be re-edited.
+        $planDay?->meals->each(function ($meal) use ($logs) {
+            $foodIds = $logs->firstWhere('meal_name', $meal->name)?->items->pluck('food_id');
+            $meal->setAttribute('logged_item_ids', $foodIds
+                ? $meal->items->filter(fn ($i) => $i->food?->id && $foodIds->contains($i->food->id))->pluck('id')->values()
+                : []);
+        });
 
         $water = WaterLog::query()
             ->where('client_id', $client->id)
@@ -64,6 +86,28 @@ class NutritionController extends Controller
                 'amount_ml' => $water?->amount_ml ?? 0,
                 'target_ml' => $targets?->water_ml ?? 2500,
             ],
+        ]);
+    }
+
+    public function plan(Request $request): Response
+    {
+        $client = $request->user()->clientProfile;
+
+        $assignment = NutritionAssignment::query()
+            ->with(
+                'planVersion.plan',
+                'planVersion.days.meals.items.food',
+                'planVersion.days.meals.items.portion',
+                'planVersion.days.meals.items.recipe',
+                'assignedBy:id,name,avatar',
+                'assignedBy.professionalProfile:id,user_id',
+            )
+            ->where('client_id', $client->id)
+            ->where('status', 'active')
+            ->first();
+
+        return Inertia::render('client/nutrition/plan', [
+            'assignment' => $assignment,
         ]);
     }
 
@@ -124,6 +168,63 @@ class NutritionController extends Controller
         }
 
         return redirect("/app/nutrition?date={$validated['logged_on']}");
+    }
+
+    /** Confirm the client ate a planned meal — copy its items into a food log. */
+    public function confirmMeal(Request $request, Meal $meal): RedirectResponse
+    {
+        $client = $request->user()->clientProfile;
+        $validated = $request->validate([
+            'logged_on' => ['nullable', 'date'],
+            'item_ids' => ['required', 'array', 'min:1'],
+            'item_ids.*' => ['integer'],
+        ]);
+        $date = $validated['logged_on'] ?? today()->toDateString();
+
+        // The meal must belong to the client's active meal plan.
+        abort_unless(
+            NutritionAssignment::query()
+                ->where('client_id', $client->id)
+                ->where('status', 'active')
+                ->whereHas('planVersion.days.meals', fn ($q) => $q->where('meals.id', $meal->id))
+                ->exists(),
+            404,
+        );
+
+        $log = FoodLog::query()
+            ->where('client_id', $client->id)
+            ->where('meal_name', $meal->name)
+            ->whereDate('logged_on', $date)
+            ->first() ?? FoodLog::create([
+                'client_id' => $client->id,
+                'logged_on' => $date,
+                'meal_name' => $meal->name,
+            ]);
+
+        if (! $log->wasRecentlyCreated || $log->items()->doesntExist()) {
+            $log->items()->delete();
+
+            foreach ($meal->items()->with('food', 'portion')->whereIn('id', $validated['item_ids'])->get() as $item) {
+                if (! $item->food) {
+                    continue;
+                }
+
+                $grams = $item->portion ? $item->portion->grams * $item->quantity : $item->quantity * 100;
+
+                FoodLogItem::create([
+                    'food_log_id' => $log->id,
+                    'food_id' => $item->food->id,
+                    'grams' => $grams,
+                    'calories' => round($item->food->calories * $grams / 100),
+                    'protein_g' => round($item->food->protein_g * $grams / 100, 1),
+                    'carbs_g' => round($item->food->carbs_g * $grams / 100, 1),
+                    'fat_g' => round($item->food->fat_g * $grams / 100, 1),
+                    'logged_at' => now(),
+                ]);
+            }
+        }
+
+        return back();
     }
 
     public function destroy(Request $request, FoodLog $foodLog): RedirectResponse

@@ -1,13 +1,63 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { BedDouble, CalendarDays, Dumbbell, Play } from 'lucide-react';
+import { BedDouble, CalendarDays, Dumbbell, Play, UtensilsCrossed, type LucideIcon } from 'lucide-react';
 import { EmptyState } from '@/components/trainet/empty-state';
 import { ListRow } from '@/components/trainet/list-row';
 import { SectionCard } from '@/components/trainet/section-card';
 import { StatusChip, type StatusTone } from '@/components/trainet/status-chip';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { mediaUrl } from '@/lib/media';
+import { cn } from '@/lib/utils';
 import type { ProgramAssignment, WorkoutSession } from '@/types';
+
+type Coach = {
+    id: number;
+    name: string;
+    avatar: string | null;
+    professional_profile: { id: number } | null;
+};
+
+const CoachAvatar = ({ coach }: { coach: Coach | null | undefined }) => {
+    if (!coach) {
+        return null;
+    }
+
+    const avatar = (
+        <Avatar className="size-11 ring-2 ring-border transition-transform hover:scale-105" title={coach.name}>
+            <AvatarImage src={mediaUrl(coach.avatar) ?? undefined} alt={coach.name} />
+            <AvatarFallback className="text-sm">{coach.name.slice(0, 1)}</AvatarFallback>
+        </Avatar>
+    );
+
+    return coach.professional_profile ? (
+        <Link href={`/app/professionals/${coach.professional_profile.id}`}>{avatar}</Link>
+    ) : (
+        avatar
+    );
+};
+
+const TypeBadge = ({
+    icon: Icon,
+    children,
+    className,
+}: {
+    icon: LucideIcon;
+    children: string;
+    className?: string;
+}) => (
+    <Badge
+        variant="secondary"
+        className={cn(
+            'gap-1 px-1.5 py-0 text-[10px] font-semibold tracking-wide uppercase',
+            className,
+        )}
+    >
+        <Icon className="size-3" />
+        {children}
+    </Badge>
+);
 
 type Props = {
     assignment: (ProgramAssignment & {
@@ -21,9 +71,17 @@ type Props = {
                 exercises: { id: number }[];
             }[];
         };
+        assigned_by: Coach | null;
     }) | null;
     upcoming: WorkoutSession[];
-    recent: WorkoutSession[];
+    mealPlan: {
+        assigned_by: Coach | null;
+        plan_version: {
+            version_number: number;
+            plan: { name: string; description: string | null };
+            days: { id: number; title: string; meals: { id: number }[] }[];
+        } | null;
+    } | null;
 };
 
 const sessionTone: Record<string, StatusTone> = {
@@ -34,25 +92,28 @@ const sessionTone: Record<string, StatusTone> = {
     paused: 'warning',
 };
 
-export default function TrainingIndex({ assignment, upcoming, recent }: Props) {
+export default function TrainingIndex({ assignment, upcoming, mealPlan }: Props) {
     const version = assignment?.program_version;
+    const mealPlanVersion = mealPlan?.plan_version;
     const nextUp = upcoming[0];
 
     return (
         <>
-            <Head title="Training" />
+            <Head title="Plans" />
             <div className="space-y-5 py-5">
-                <h1 className="text-2xl font-bold tracking-tight">Training</h1>
+                <h1 className="text-2xl font-bold tracking-tight">Plans</h1>
 
-                {!assignment ? (
+                {!assignment && !mealPlanVersion ? (
                     <EmptyState
                         icon={Dumbbell}
-                        title="No program yet"
-                        description="Your coach hasn't assigned a training program. Check back soon."
+                        title="No plan yet"
+                        description="Your coach hasn't assigned a program or meal plan. Check back soon."
                     />
                 ) : (
                     <>
-                        {nextUp && (
+                        {assignment && (
+                            <>
+                                {nextUp && (
                             <Card className="border-primary/30">
                                 <CardContent className="flex items-center justify-between gap-3">
                                     <div>
@@ -81,9 +142,19 @@ export default function TrainingIndex({ assignment, upcoming, recent }: Props) {
                         )}
 
                         <SectionCard
-                            title={version?.program.name ?? 'Program'}
+                            title={
+                                <span className="flex flex-wrap items-center gap-2">
+                                    {version?.program.name ?? 'Program'}
+                                    <TypeBadge
+                                        icon={Dumbbell}
+                                        className="bg-primary/10 text-primary"
+                                    >
+                                        Training program
+                                    </TypeBadge>
+                                </span>
+                            }
                             description={version?.program.description ?? undefined}
-                            action={<StatusChip tone="info">v{version?.version_number}</StatusChip>}
+                            action={<CoachAvatar coach={assignment?.assigned_by} />}
                         >
                             <div className="divide-y">
                                 {version?.days.map((day) => (
@@ -130,37 +201,38 @@ export default function TrainingIndex({ assignment, upcoming, recent }: Props) {
                                 ))}
                             </div>
                         </SectionCard>
+                            </>
+                        )}
 
-                        <SectionCard
-                            title="Recent sessions"
-                            action={
-                                <Button variant="ghost" size="sm" asChild>
-                                    <Link href="/app/history">All history</Link>
-                                </Button>
-                            }
-                        >
-                            {recent.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">
-                                    No completed sessions yet — your first one is coming.
-                                </p>
-                            ) : (
+                        {mealPlanVersion && (
+                            <SectionCard
+                                title={
+                                    <span className="flex flex-wrap items-center gap-2">
+                                        {mealPlanVersion.plan.name}
+                                        <TypeBadge
+                                            icon={UtensilsCrossed}
+                                            className="bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                        >
+                                            Meal plan
+                                        </TypeBadge>
+                                    </span>
+                                }
+                                description={mealPlanVersion.plan.description ?? undefined}
+                                action={<CoachAvatar coach={mealPlan?.assigned_by} />}
+                            >
                                 <div className="divide-y">
-                                    {recent.map((s) => (
+                                    {mealPlanVersion.days.map((day) => (
                                         <ListRow
-                                            key={s.id}
-                                            title={s.training_day?.title ?? 'Workout'}
-                                            subtitle={new Date(s.scheduled_for + 'T00:00:00').toLocaleDateString('en-GB', {
-                                                weekday: 'short',
-                                                day: 'numeric',
-                                                month: 'short',
-                                            })}
-                                            trailing={<StatusChip tone="success">Done</StatusChip>}
-                                            href={`/app/workouts/${s.id}`}
+                                            key={day.id}
+                                            leading={<UtensilsCrossed className="size-4 text-amber-500" />}
+                                            title={day.title}
+                                            subtitle={`${day.meals.length} meals`}
+                                            href="/app/nutrition/plan"
                                         />
                                     ))}
                                 </div>
-                            )}
-                        </SectionCard>
+                            </SectionCard>
+                        )}
                     </>
                 )}
             </div>

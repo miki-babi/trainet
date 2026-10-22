@@ -4,7 +4,8 @@ use App\Http\Controllers\Persona\PersonaController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [PersonaController::class, 'index'])->name('personas');
+Route::inertia('/', 'welcome')->name('welcome');
+Route::get('/personas', [PersonaController::class, 'index'])->name('personas');
 Route::post('/personas/{user}', [PersonaController::class, 'store'])->name('personas.login');
 
 // Demo data reset — wipes and reseeds the database (non-production only).

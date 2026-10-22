@@ -19,7 +19,7 @@ export function ActivityTile({
     href?: string;
     onClick?: () => void;
     variant?: 'lime' | 'blue' | 'dark' | 'ghost';
-    avatars?: string[];
+    avatars?: ({ initial: string; src?: string | null } | string)[];
     action?: { icon: LucideIcon; label: string; onClick: () => void };
     className?: string;
 }) {
@@ -47,14 +47,22 @@ export function ActivityTile({
             <div className="flex items-start justify-between">
                 {avatars ? (
                     <div className="flex -space-x-2">
-                        {avatars.map((initial, i) => (
-                            <span
-                                key={i}
-                                className="flex size-7 items-center justify-center rounded-full bg-foreground/10 text-[10px] font-bold backdrop-blur"
-                            >
-                                {initial}
-                            </span>
-                        ))}
+                        {avatars.map((a, i) => {
+                            const initial = typeof a === 'string' ? a : a.initial;
+                            const src = typeof a === 'string' ? null : a.src;
+                            return (
+                                <span
+                                    key={i}
+                                    className="flex size-7 items-center justify-center overflow-hidden rounded-full bg-foreground/10 text-[10px] font-bold backdrop-blur"
+                                >
+                                    {src ? (
+                                        <img src={src} alt="" className="size-7 rounded-full object-cover" />
+                                    ) : (
+                                        initial
+                                    )}
+                                </span>
+                            );
+                        })}
                     </div>
                 ) : (
                     Icon && <Icon className="size-5 opacity-80" />

@@ -8,6 +8,7 @@ use App\Http\Controllers\Client\HistoryController;
 use App\Http\Controllers\Client\MessageController;
 use App\Http\Controllers\Client\NutritionController;
 use App\Http\Controllers\Client\OnboardingController;
+use App\Http\Controllers\Client\ProfessionalController;
 use App\Http\Controllers\Client\ProfileController;
 use App\Http\Controllers\Client\ProgressController;
 use App\Http\Controllers\Client\TodayController;
@@ -28,6 +29,13 @@ Route::middleware(['auth', 'client'])->prefix('app')->name('client.')->group(fun
 
     Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
 
+    Route::get('/professionals', [ProfessionalController::class, 'index'])->name('professionals.index');
+    Route::get('/professionals/{professionalProfile}', [ProfessionalController::class, 'show'])->name('professionals.show');
+    Route::post('/professionals/{professionalProfile}/request', [ProfessionalController::class, 'request'])->name('professionals.request');
+    Route::post('/professionals/{professionalProfile}/message', [ProfessionalController::class, 'message'])->name('professionals.message');
+    Route::get('/professionals/{professionalProfile}/packages/{proPackage}', [ProfessionalController::class, 'checkout'])->name('packages.checkout');
+    Route::post('/professionals/{professionalProfile}/packages/{proPackage}', [ProfessionalController::class, 'purchase'])->name('packages.purchase');
+
     Route::get('/workouts/{workoutSession}', [WorkoutSessionController::class, 'show'])->name('workouts.show');
     Route::post('/workouts/{workoutSession}/start', [WorkoutSessionController::class, 'start'])->name('workouts.start');
     Route::post('/workouts/{workoutSession}/pause', [WorkoutSessionController::class, 'pause'])->name('workouts.pause');
@@ -45,8 +53,10 @@ Route::middleware(['auth', 'client'])->prefix('app')->name('client.')->group(fun
     Route::get('/exercises/{exercise}', [ExerciseController::class, 'show'])->name('exercises.show');
 
     Route::get('/nutrition', [NutritionController::class, 'index'])->name('nutrition.index');
+    Route::get('/nutrition/plan', [NutritionController::class, 'plan'])->name('nutrition.plan');
     Route::get('/nutrition/log', [NutritionController::class, 'create'])->name('nutrition.create');
     Route::post('/nutrition/log', [NutritionController::class, 'store'])->name('nutrition.store');
+    Route::post('/nutrition/plan-meals/{meal}/confirm', [NutritionController::class, 'confirmMeal'])->name('nutrition.plan-meals.confirm');
     Route::delete('/nutrition/logs/{foodLog}', [NutritionController::class, 'destroy'])->name('nutrition.logs.destroy');
     Route::delete('/nutrition/items/{foodLogItem}', [NutritionController::class, 'destroyItem'])->name('nutrition.items.destroy');
     Route::post('/water', [NutritionController::class, 'storeWater'])->name('water.store');
@@ -58,6 +68,7 @@ Route::middleware(['auth', 'client'])->prefix('app')->name('client.')->group(fun
     Route::post('/progress/metrics', [ProgressController::class, 'storeMetric'])->name('metrics.store');
     Route::post('/progress/photos', [ProgressController::class, 'storePhoto'])->name('photos.store');
     Route::post('/progress/quick', [ProgressController::class, 'quickLog'])->name('progress.quick');
+    Route::post('/progress/share', [ProgressController::class, 'share'])->name('progress.share');
 
     Route::get('/check-ins', [CheckInController::class, 'index'])->name('check-ins.index');
     Route::get('/check-ins/{checkInSubmission}/edit', [CheckInController::class, 'edit'])->name('check-ins.edit');

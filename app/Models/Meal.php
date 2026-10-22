@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['nutrition_plan_day_id', 'name', 'time_hint', 'order', 'notes'])]
+#[Fillable(['nutrition_plan_day_id', 'name', 'time_hint', 'order', 'notes', 'image_url'])]
 class Meal extends Model
 {
     use HasFactory;

@@ -6,7 +6,10 @@ use App\Enums\CheckInSubmissionStatus;
 use App\Enums\WorkoutSessionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\CheckInSubmission;
+use App\Models\ClientMetricEntry;
 use App\Models\FoodLog;
+use App\Models\MetricDefinition;
+use App\Models\PackagePurchase;
 use App\Models\ProfessionalClientAssignment;
 use App\Models\WorkoutSession;
 use Illuminate\Http\Request;
@@ -120,6 +123,64 @@ class ReportController extends Controller
         $totalCheckIns = $checkIns->count();
         $submittedCheckIns = $checkIns->whereIn('status', [CheckInSubmissionStatus::Submitted, CheckInSubmissionStatus::Reviewed])->count();
 
+        // Mockup analytics: retention, avg client progress, revenue
+        $assignmentCounts = ProfessionalClientAssignment::query()
+            ->where('workspace_id', $workspaceId)
+            ->selectRaw('status, count(*) as n')
+            ->groupBy('status')
+            ->pluck('n', 'status');
+        $activeAssignments = (int) ($assignmentCounts['active'] ?? 0);
+        $endedAssignments = (int) ($assignmentCounts['ended'] ?? 0);
+        $retention = ($activeAssignments + $endedAssignments) > 0
+            ? round($activeAssignments / ($activeAssignments + $endedAssignments) * 100)
+            : null;
+
+        $weightDef = MetricDefinition::where('key', 'weight')->first();
+        $bodyFatDef = MetricDefinition::where('key', 'body_fat')->first();
+
+        $avgProgress = null;
+        if ($weightDef) {
+            $deltas = ClientMetricEntry::query()
+                ->where('metric_definition_id', $weightDef->id)
+                ->whereIn('client_id', $clientIds)
+                ->orderBy('observed_on')
+                ->get()
+                ->groupBy('client_id')
+                ->map(fn ($entries) => $entries->count() > 1
+                    ? (($entries->last()->value - $entries->first()->value) / $entries->first()->value) * 100
+                    : null)
+                ->filter();
+            $avgProgress = $deltas->isEmpty() ? null : round($deltas->avg(), 1);
+        }
+
+        $monthRevenue = PackagePurchase::where('workspace_id', $workspaceId)
+            ->where('status', 'paid')
+            ->where('purchased_at', '>=', now()->startOfMonth())
+            ->sum('amount_cents');
+        $lastMonthRevenue = PackagePurchase::where('workspace_id', $workspaceId)
+            ->where('status', 'paid')
+            ->whereBetween('purchased_at', [now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth()])
+            ->sum('amount_cents');
+
+        // Average client progress per week (weight + body fat)
+        $progressWeeks = collect(range(7, 0))->map(fn ($i) => now()->subWeeks($i)->startOfWeek());
+        $metricEntries = ClientMetricEntry::query()
+            ->whereIn('client_id', $clientIds)
+            ->whereIn('metric_definition_id', array_filter([$weightDef?->id, $bodyFatDef?->id]))
+            ->where('observed_on', '>=', $progressWeeks->first()->toDateString())
+            ->get();
+        $clientProgress = $progressWeeks->map(function ($w) use ($metricEntries, $weightDef, $bodyFatDef) {
+            $weekEntries = $metricEntries->filter(
+                fn ($e) => $e->observed_on->between($w, $w->copy()->endOfWeek()),
+            );
+
+            return [
+                'label' => $w->format('j M'),
+                'weight' => $weightDef ? round((float) $weekEntries->where('metric_definition_id', $weightDef->id)->avg('value'), 1) : null,
+                'body_fat' => $bodyFatDef ? round((float) $weekEntries->where('metric_definition_id', $bodyFatDef->id)->avg('value'), 1) : null,
+            ];
+        })->values();
+
         return Inertia::render('pro/reports/index', [
             'weekLabels' => $weekLabels,
             'sessionWeeks' => $sessionWeeks,
@@ -140,6 +201,16 @@ class ReportController extends Controller
                 'pending_checkins' => $checkIns->where('status', CheckInSubmissionStatus::Pending)->count(),
                 'nutrition_logs' => $foodLogs->count(),
             ],
+            'analytics' => [
+                'total_clients' => $clientIds->unique()->count(),
+                'retention' => $retention,
+                'avg_progress' => $avgProgress,
+                'revenue' => $monthRevenue,
+                'revenue_delta' => $lastMonthRevenue > 0
+                    ? round(($monthRevenue - $lastMonthRevenue) / $lastMonthRevenue * 100)
+                    : null,
+            ],
+            'clientProgress' => $clientProgress,
         ]);
     }
 }

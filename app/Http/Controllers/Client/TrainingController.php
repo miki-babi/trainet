@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Client;
 
 use App\Enums\AssignmentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\NutritionAssignment;
 use App\Models\ProgramAssignment;
 use App\Models\TrainingDay;
 use App\Models\WorkoutSession;
@@ -18,7 +19,12 @@ class TrainingController extends Controller
         $client = $request->user()->clientProfile;
 
         $assignment = ProgramAssignment::query()
-            ->with('programVersion.program', 'programVersion.days.exercises.exercise')
+            ->with(
+                'programVersion.program',
+                'programVersion.days.exercises.exercise',
+                'assignedBy:id,name,avatar',
+                'assignedBy.professionalProfile:id,user_id',
+            )
             ->where('client_id', $client->id)
             ->where('status', AssignmentStatus::Active)
             ->first();
@@ -31,18 +37,21 @@ class TrainingController extends Controller
             ->limit(8)
             ->get();
 
-        $recent = WorkoutSession::query()
-            ->with('trainingDay')
+        $mealPlan = NutritionAssignment::query()
+            ->with(
+                'planVersion.plan',
+                'planVersion.days.meals',
+                'assignedBy:id,name,avatar',
+                'assignedBy.professionalProfile:id,user_id',
+            )
             ->where('client_id', $client->id)
-            ->where('status', 'completed')
-            ->orderByDesc('scheduled_for')
-            ->limit(5)
-            ->get();
+            ->where('status', 'active')
+            ->first();
 
         return Inertia::render('client/training/index', [
             'assignment' => $assignment,
             'upcoming' => $upcoming,
-            'recent' => $recent,
+            'mealPlan' => $mealPlan,
         ]);
     }
 

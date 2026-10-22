@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'fiber_g',
     'sodium_mg',
     'serving_description',
+    'image_url',
     'is_custom',
 ])]
 class Food extends Model

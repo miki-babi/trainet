@@ -30,7 +30,7 @@ test('persona picker lists all personas', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('personas')
-            ->has('personas', 8),
+            ->has('personas', 11),
         );
 });
 
@@ -224,17 +224,20 @@ test('client books an appointment and pro can confirm it', function () {
     $dana = User::where('email', 'dana@trainet.test')->firstOrFail();
     $type = AppointmentType::firstOrFail();
 
-    // Book at a slot inside Dana's availability
-    $day = today()->addDays(2);
-    $rule = AvailabilityRule::where('user_id', $dana->id)
-        ->where('weekday', (int) $day->format('N'))
-        ->first();
-    if (! $rule) {
-        $day = today()->addDays(10);
+    // Book at a slot inside Dana's availability — find the next day with a rule.
+    $day = today();
+    $rule = null;
+    foreach (range(1, 14) as $offset) {
+        $candidate = today()->addDays($offset);
         $rule = AvailabilityRule::where('user_id', $dana->id)
-            ->where('weekday', (int) $day->format('N'))
-            ->firstOrFail();
+            ->where('weekday', (int) $candidate->format('N'))
+            ->first();
+        if ($rule) {
+            $day = $candidate;
+            break;
+        }
     }
+    $rule || abort(500, 'No availability rules seeded for Dana');
 
     $this->actingAs($maya)->post('/app/appointments', [
         'appointment_type_id' => $type->id,

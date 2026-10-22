@@ -7,14 +7,17 @@ use App\Enums\ContentStatus;
 use App\Enums\VersionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ClientProfile;
+use App\Models\Conversation;
 use App\Models\Food;
 use App\Models\Meal;
 use App\Models\MealItem;
+use App\Models\Message;
 use App\Models\NutritionAssignment;
 use App\Models\NutritionPlan;
 use App\Models\NutritionPlanDay;
 use App\Models\NutritionPlanVersion;
 use App\Models\NutritionTarget;
+use App\Models\PackagePurchase;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +43,20 @@ class NutritionPlanController extends Controller
                 ->whereHas('professionalAssignments', fn ($q) => $q->where('workspace_id', $this->workspaceId($request))->where('status', 'active'))
                 ->get()
                 ->map(fn ($c) => ['id' => $c->id, 'name' => $c->user->name]),
+            'requests' => PackagePurchase::query()
+                ->where('workspace_id', $this->workspaceId($request))
+                ->whereNull('delivered_at')
+                ->whereHas('package', fn ($q) => $q->where('kind', 'meal_plan'))
+                ->with('package:id,name', 'client.user:id,name')
+                ->latest('purchased_at')
+                ->get()
+                ->map(fn ($p) => [
+                    'id' => $p->id,
+                    'client' => $p->client?->user?->name,
+                    'package' => $p->package?->name,
+                    'intake' => $p->intake,
+                    'purchased_at' => $p->purchased_at?->diffForHumans(),
+                ]),
         ]);
     }
 
@@ -203,6 +220,48 @@ class NutritionPlanController extends Controller
                     'water_ml' => $validated['water_ml'] ?? null,
                     'starts_on' => $validated['starts_on'],
                 ]);
+            }
+
+            // A published plan delivery fulfils pending meal-plan purchases — mark them and notify the client.
+            $pending = PackagePurchase::query()
+                ->where('workspace_id', $this->workspaceId($request))
+                ->where('client_profile_id', $validated['client_id'])
+                ->whereNull('delivered_at')
+                ->whereHas('package', fn ($q) => $q->where('kind', 'meal_plan'))
+                ->get();
+
+            if ($pending->isNotEmpty()) {
+                PackagePurchase::query()->whereIn('id', $pending->pluck('id'))->update(['delivered_at' => now()]);
+
+                $clientUser = ClientProfile::query()->find($validated['client_id'])?->user;
+
+                if ($clientUser) {
+                    $conversation = Conversation::query()
+                        ->where('workspace_id', $this->workspaceId($request))
+                        ->where('type', 'direct')
+                        ->whereHas('members', fn ($q) => $q->where('user_id', $request->user()->id))
+                        ->whereHas('members', fn ($q) => $q->where('user_id', $clientUser->id))
+                        ->first();
+
+                    if (! $conversation) {
+                        $conversation = Conversation::create([
+                            'workspace_id' => $this->workspaceId($request),
+                            'type' => 'direct',
+                        ]);
+                        $conversation->members()->createMany([
+                            ['user_id' => $request->user()->id],
+                            ['user_id' => $clientUser->id],
+                        ]);
+                    }
+
+                    $planName = $nutritionPlanVersion->plan?->name ?? 'your meal plan';
+
+                    Message::create([
+                        'conversation_id' => $conversation->id,
+                        'sender_id' => $request->user()->id,
+                        'body' => "Your personalized meal plan is ready — I've assigned \"{$planName}\" to you. Open Nutrition → Full plan to see it.",
+                    ]);
+                }
             }
         });
 

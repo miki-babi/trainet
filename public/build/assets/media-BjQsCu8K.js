@@ -1,0 +1,1 @@
+function e(e){return e?e.startsWith(`http`)?e:`/storage/${e}`:null}export{e as t};

@@ -31,6 +31,7 @@ class WorkoutSessionController extends Controller
             'exercises.exercise.muscleGroups',
             'exercises.exercise.equipment',
             'exercises.exercise.alternatives',
+            'exercises.exercise.media',
             'exercises.sets' => fn ($q) => $q->orderBy('set_order'),
         ]);
 

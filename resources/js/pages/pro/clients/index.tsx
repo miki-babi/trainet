@@ -1,8 +1,12 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
+import { Check, X } from 'lucide-react';
 import { useState } from 'react';
 import { ClientsPanel, type ClientFilters, type ClientRow } from '@/components/pro/clients-panel';
 import { ConversationList, type ConversationListItem } from '@/components/trainet/conversation-list';
 import { PageHeader } from '@/components/trainet/page-header';
+import { SectionCard } from '@/components/trainet/section-card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type Tab = 'clients' | 'messages';
@@ -13,9 +17,10 @@ type Props = {
     tags: { id: number; name: string; color: string | null }[];
     filters: ClientFilters;
     conversations: ConversationListItem[];
+    pendingRequests: { id: number; client_name: string; relationship_type: string; requested_at: string }[];
 };
 
-export default function ClientsIndex({ tab: initialTab, clients, tags, filters, conversations }: Props) {
+export default function ClientsIndex({ tab: initialTab, clients, tags, filters, conversations, pendingRequests }: Props) {
     const [tab, setTab] = useState<Tab>(initialTab === 'messages' ? 'messages' : 'clients');
     const unread = conversations.reduce((a, c) => a + c.unread, 0);
 
@@ -68,7 +73,40 @@ export default function ClientsIndex({ tab: initialTab, clients, tags, filters, 
                 </div>
 
                 {tab === 'clients' && (
-                    <ClientsPanel clients={clients} tags={tags} filters={filters} />
+                    <>
+                        {pendingRequests.length > 0 && (
+                            <SectionCard title="Client requests">
+                                <div className="divide-y">
+                                    {pendingRequests.map((req) => (
+                                        <div key={req.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-medium">{req.client_name}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    <Badge variant="secondary" className="mr-1.5 capitalize">{req.relationship_type}</Badge>
+                                                    {req.requested_at}
+                                                </p>
+                                            </div>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => router.post(`/pro/client-requests/${req.id}/approve`, {}, { preserveScroll: true })}
+                                            >
+                                                <Check className="size-4" /> Approve
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="text-muted-foreground hover:text-destructive"
+                                                onClick={() => router.post(`/pro/client-requests/${req.id}/decline`, {}, { preserveScroll: true })}
+                                            >
+                                                <X className="size-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </SectionCard>
+                        )}
+                        <ClientsPanel clients={clients} tags={tags} filters={filters} />
+                    </>
                 )}
                 {tab === 'messages' && (
                     <ConversationList

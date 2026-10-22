@@ -5,13 +5,14 @@ use App\Http\Controllers\Pro\AppointmentTypeController;
 use App\Http\Controllers\Pro\AvailabilityController;
 use App\Http\Controllers\Pro\CalendarController;
 use App\Http\Controllers\Pro\CheckInController;
-use App\Http\Controllers\Pro\ContentController;
 use App\Http\Controllers\Pro\ClientController;
+use App\Http\Controllers\Pro\ContentController;
 use App\Http\Controllers\Pro\ExerciseController;
 use App\Http\Controllers\Pro\FoodController;
 use App\Http\Controllers\Pro\MemberController;
 use App\Http\Controllers\Pro\MessageController;
 use App\Http\Controllers\Pro\NutritionPlanController;
+use App\Http\Controllers\Pro\PaymentController;
 use App\Http\Controllers\Pro\ProgramController;
 use App\Http\Controllers\Pro\ReportController;
 use App\Http\Controllers\Pro\SettingController;
@@ -28,6 +29,8 @@ Route::middleware(['auth', 'professional'])->prefix('pro')->name('pro.')->group(
     Route::post('/clients/{clientProfile}/tags', [ClientController::class, 'syncTags'])->name('clients.tags.sync');
     Route::post('/clients/{clientProfile}/status', [ClientController::class, 'updateStatus'])->name('clients.status.update');
     Route::post('/invites', [ClientController::class, 'storeInvite'])->name('invites.store');
+    Route::post('/client-requests/{assignment}/approve', [ClientController::class, 'approveRequest'])->name('client-requests.approve');
+    Route::post('/client-requests/{assignment}/decline', [ClientController::class, 'declineRequest'])->name('client-requests.decline');
 
     // Content hub: programs + exercises + nutrition plans
     Route::get('/content', [ContentController::class, 'index'])->name('content.index');
@@ -98,6 +101,7 @@ Route::middleware(['auth', 'professional'])->prefix('pro')->name('pro.')->group(
 
     // Workspace
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit');
     Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
     Route::get('/members', [MemberController::class, 'index'])->name('members.index');

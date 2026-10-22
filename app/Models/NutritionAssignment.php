@@ -23,6 +23,11 @@ class NutritionAssignment extends Model
         return $this->belongsTo(NutritionPlanVersion::class, 'nutrition_plan_version_id');
     }
 
+    public function assignedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_by');
+    }
+
     protected function casts(): array
     {
         return [

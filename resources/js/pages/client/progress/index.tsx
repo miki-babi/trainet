@@ -1,5 +1,5 @@
-import { Head, router } from '@inertiajs/react';
-import { ArrowUpRight, Camera, Plus, Target, TrendingDown, TrendingUp } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { ArrowUpRight, Camera, Plus, Send, Target, TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { SectionCard } from '@/components/trainet/section-card';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,7 @@ type Props = {
     metricDefs: { id: number; name: string; unit: string }[];
     goals: Goal[];
     photos: { id: number; url: string; taken_on: string; label: string | null }[];
+    hasPro: boolean;
 };
 
 const RANGES = [
@@ -54,7 +55,8 @@ function Bars({ values, light = false }: { values: number[]; light?: boolean }) 
     );
 }
 
-export default function ProgressIndex({ metrics, metricDefs, goals, photos }: Props) {
+export default function ProgressIndex({ metrics, metricDefs, goals, photos, hasPro }: Props) {
+    const [section, setSection] = useState<'stats' | 'photos' | 'goals'>('stats');
     const [range, setRange] = useState('month');
     const [metricOpen, setMetricOpen] = useState(false);
     const [metricForm, setMetricForm] = useState({
@@ -63,6 +65,7 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos }: Pr
         observed_on: new Date().toISOString().slice(0, 10),
     });
     const [uploading, setUploading] = useState(false);
+    const [sharing, setSharing] = useState(false);
 
     const addMetric = () => {
         router.post(
@@ -189,7 +192,33 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos }: Pr
                     </div>
                 </div>
 
+                {/* Section tabs */}
+                <div className="flex w-fit gap-1 rounded-full bg-muted p-1">
+                    {(
+                        [
+                            { key: 'stats', label: 'Statistics' },
+                            { key: 'photos', label: 'Photos' },
+                            { key: 'goals', label: 'Goals' },
+                        ] as const
+                    ).map((t) => (
+                        <button
+                            key={t.key}
+                            type="button"
+                            onClick={() => setSection(t.key)}
+                            className={cn(
+                                'rounded-full px-5 py-1.5 text-sm font-medium transition-colors',
+                                section === t.key
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'text-muted-foreground',
+                            )}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
+
                 {/* Range pills */}
+                {section === 'stats' && (
                 <div className="flex w-fit gap-1 rounded-full bg-muted p-1">
                     {RANGES.map((r) => (
                         <button
@@ -207,9 +236,10 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos }: Pr
                         </button>
                     ))}
                 </div>
+                )}
 
                 {/* Hero metric — highlight card */}
-                {hero && heroPoints.length > 0 ? (
+                {section === 'stats' && (hero && heroPoints.length > 0 ? (
                     <div className="rounded-3xl bg-highlight p-5 text-highlight-foreground">
                         <div className="flex items-start justify-between">
                             <div>
@@ -256,10 +286,10 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos }: Pr
                             No measurements in this range — log one to see your stats.
                         </p>
                     </SectionCard>
-                )}
+                ))}
 
                 {/* Remaining metrics — 2-col stat tiles */}
-                {names.length > 1 && (
+                {section === 'stats' && names.length > 1 && (
                     <div className="grid grid-cols-2 gap-3">
                         {names.slice(1).map((name) => {
                             const pts = filtered[name];
@@ -305,7 +335,8 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos }: Pr
                     </div>
                 )}
 
-                {goals.filter((g) => g.status === 'active').length > 0 && (
+                {section === 'goals' &&
+                    (goals.filter((g) => g.status === 'active').length > 0 ? (
                     <SectionCard title="Goals">
                         <div className="space-y-4">
                             {goals
@@ -335,8 +366,15 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos }: Pr
                                 })}
                         </div>
                     </SectionCard>
-                )}
+                    ) : (
+                        <SectionCard title="Goals">
+                            <p className="text-sm text-muted-foreground">
+                                No active goals yet — your coach can set them with you.
+                            </p>
+                        </SectionCard>
+                    ))}
 
+                {section === 'photos' && (
                 <SectionCard title="Photos">
                     {photos.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
@@ -359,6 +397,28 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos }: Pr
                         </div>
                     )}
                 </SectionCard>
+                )}
+
+                {hasPro ? (
+                    <Button
+                        className="h-12 w-full rounded-2xl"
+                        disabled={sharing}
+                        onClick={() => {
+                            setSharing(true);
+                            router.post(
+                                '/app/progress/share',
+                                {},
+                                { preserveScroll: true, onFinish: () => setSharing(false) },
+                            );
+                        }}
+                    >
+                        <Send className="mr-1" /> Share with your coach
+                    </Button>
+                ) : (
+                    <Button className="h-12 w-full rounded-2xl" variant="outline" asChild>
+                        <Link href="/app/professionals">Find a coach to share progress</Link>
+                    </Button>
+                )}
             </div>
         </>
     );

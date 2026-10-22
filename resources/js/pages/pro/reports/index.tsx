@@ -1,5 +1,15 @@
 import { Head } from '@inertiajs/react';
-import { Activity, BarChart3, CheckCircle2, ClipboardCheck, UtensilsCrossed, Users } from 'lucide-react';
+import {
+    Activity,
+    Banknote,
+    BarChart3,
+    CheckCircle2,
+    ClipboardCheck,
+    HeartPulse,
+    Repeat,
+    UtensilsCrossed,
+    Users,
+} from 'lucide-react';
 import {
     BarChart,
     DoughnutChart,
@@ -42,6 +52,14 @@ type Props = {
         pending_checkins: number;
         nutrition_logs: number;
     };
+    analytics: {
+        total_clients: number;
+        retention: number | null;
+        avg_progress: number | null;
+        revenue: number;
+        revenue_delta: number | null;
+    };
+    clientProgress: { label: string; weight: number | null; body_fat: number | null }[];
 };
 
 export default function ReportsIndex({
@@ -52,6 +70,8 @@ export default function ReportsIndex({
     sessionTotals,
     clients,
     totals,
+    analytics,
+    clientProgress,
 }: Props) {
     const adherenceClients = clients.filter((c) => c.adherence !== null);
     const sessionTotal = sessionTotals.completed + sessionTotals.missed + sessionTotals.skipped;
@@ -88,6 +108,61 @@ export default function ReportsIndex({
                     />
                     <StatCard label="Nutrition logs" value={totals.nutrition_logs} icon={UtensilsCrossed} />
                 </div>
+
+                {/* Business analytics */}
+                <section className="space-y-3">
+                    <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                        Business
+                    </h2>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        <StatCard
+                            label="Revenue this month"
+                            value={`$${(analytics.revenue / 100).toLocaleString()}`}
+                            hint={
+                                analytics.revenue_delta !== null
+                                    ? `${analytics.revenue_delta >= 0 ? '+' : ''}${analytics.revenue_delta}% vs last month`
+                                    : undefined
+                            }
+                            icon={Banknote}
+                        />
+                        <StatCard
+                            label="Retention"
+                            value={analytics.retention !== null ? `${analytics.retention}%` : '—'}
+                            icon={Repeat}
+                        />
+                        <StatCard
+                            label="Avg. client weight change"
+                            value={analytics.avg_progress !== null ? `${analytics.avg_progress}%` : '—'}
+                            icon={HeartPulse}
+                        />
+                    </div>
+                </section>
+
+                {(clientProgress.some((w) => w.weight !== null) ||
+                    clientProgress.some((w) => w.body_fat !== null)) && (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <SectionCard
+                            title="Avg. client weight"
+                            description="Weekly average across all clients."
+                        >
+                            <LineChart
+                                labels={clientProgress.map((w) => w.label)}
+                                data={clientProgress.map((w) => w.weight) as number[]}
+                                color="primary"
+                            />
+                        </SectionCard>
+                        <SectionCard
+                            title="Avg. client body fat"
+                            description="Weekly average across all clients."
+                        >
+                            <LineChart
+                                labels={clientProgress.map((w) => w.label)}
+                                data={clientProgress.map((w) => w.body_fat) as number[]}
+                                color="accent"
+                            />
+                        </SectionCard>
+                    </div>
+                )}
 
                 <SectionCard
                     title="Sessions per week"

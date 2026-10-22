@@ -7,9 +7,11 @@ use App\Enums\WorkoutSessionStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\CheckInSubmission;
+use App\Models\PackagePurchase;
 use App\Models\ProfessionalClientAssignment;
 use App\Models\WorkoutSession;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -138,12 +140,101 @@ class TodayController extends Controller
                 'href' => "/pro/clients/{$s->client_id}",
             ]);
 
+        // Mockup dashboard stats
+        $totalClients = $assignedClientIds->count();
+        $activeThisWeek = WorkoutSession::query()
+            ->whereIn('client_id', $assignedClientIds)
+            ->where('status', WorkoutSessionStatus::Completed)
+            ->where('scheduled_for', '>=', now()->startOfWeek()->toDateString())
+            ->distinct('client_id')
+            ->count('client_id');
+        $newClientsThisWeek = ProfessionalClientAssignment::query()
+            ->where('workspace_id', $workspaceId)
+            ->where('created_at', '>=', now()->subWeek())
+            ->count();
+        $monthRevenue = PackagePurchase::where('workspace_id', $workspaceId)
+            ->where('status', 'paid')
+            ->where('purchased_at', '>=', now()->startOfMonth())
+            ->sum('amount_cents');
+        $lastMonthRevenue = PackagePurchase::where('workspace_id', $workspaceId)
+            ->where('status', 'paid')
+            ->whereBetween('purchased_at', [now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth()])
+            ->sum('amount_cents');
+        $revenueDelta = $lastMonthRevenue > 0
+            ? round(($monthRevenue - $lastMonthRevenue) / $lastMonthRevenue * 100)
+            : null;
+
+        // Recent clients with status chips
+        $pendingClientIds = CheckInSubmission::query()
+            ->whereIn('client_id', $assignedClientIds)
+            ->where('status', CheckInSubmissionStatus::Submitted)
+            ->pluck('client_id')
+            ->all();
+
+        $recentClients = ProfessionalClientAssignment::query()
+            ->with(['client.user', 'client.programAssignments' => fn ($q) => $q->where('status', 'active')->with('programVersion.program')])
+            ->where('workspace_id', $workspaceId)
+            ->where('status', 'active')
+            ->get()
+            ->unique('client_id')
+            ->map(function ($a) use ($pendingClientIds) {
+                $lastDone = WorkoutSession::query()
+                    ->where('client_id', $a->client_id)
+                    ->where('status', WorkoutSessionStatus::Completed)
+                    ->max('scheduled_for');
+                $needsAttention = in_array($a->client_id, $pendingClientIds)
+                    || ! $lastDone
+                    || $lastDone < today()->subDays(10)->toDateString();
+
+                return [
+                    'id' => $a->client_id,
+                    'name' => $a->client->user->name,
+                    'avatar' => $a->client->user->avatar,
+                    'program' => $a->client->programAssignments->first()?->programVersion?->program?->name,
+                    'last_active' => $lastDone ? Carbon::parse($lastDone)->diffForHumans() : 'no workouts yet',
+                    'sort' => $lastDone ?? '0000-00-00',
+                    'status' => $needsAttention ? 'needs_attention' : 'on_track',
+                ];
+            })
+            ->sortByDesc('sort')
+            ->take(5)
+            ->map(fn ($c) => collect($c)->except('sort')->all())
+            ->values();
+
+        // Upcoming appointments/sessions this week.
+        $upcomingAppointments = Appointment::query()
+            ->with('client.user', 'type')
+            ->where('workspace_id', $workspaceId)
+            ->whereBetween('starts_at', [now(), now()->endOfWeek()])
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->orderBy('starts_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (Appointment $a) => [
+                'id' => $a->id,
+                'client' => $a->client->user->name ?? 'Client',
+                'type' => $a->type?->name ?? 'Session',
+                'at' => $a->starts_at->format('D j M · H:i'),
+                'status' => $a->status instanceof \BackedEnum ? $a->status->value : (string) $a->status,
+                'href' => "/pro/appointments/{$a->id}",
+            ]);
+
         return Inertia::render('pro/today', [
             'professionalName' => $user->name,
             'week' => $week,
             'checkIns' => $checkIns,
+            'appointments' => $upcomingAppointments,
             'attention' => $missedSessions->concat($stalled)->values(),
             'activity' => $recentSessions,
+            'stats' => [
+                'total_clients' => $totalClients,
+                'new_this_week' => $newClientsThisWeek,
+                'active_this_week' => $activeThisWeek,
+                'pending_checkins' => $pendingReviews->count(),
+                'month_revenue' => $monthRevenue,
+                'revenue_delta' => $revenueDelta,
+            ],
+            'recentClients' => $recentClients,
         ]);
     }
 }

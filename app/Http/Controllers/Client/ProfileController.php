@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
+use App\Models\WorkoutSession;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,8 +13,19 @@ class ProfileController extends Controller
 {
     public function edit(Request $request): Response
     {
+        $client = $request->user()->clientProfile;
+
+        $recent = WorkoutSession::query()
+            ->with('trainingDay')
+            ->where('client_id', $client->id)
+            ->where('status', 'completed')
+            ->orderByDesc('scheduled_for')
+            ->limit(5)
+            ->get();
+
         return Inertia::render('client/profile/edit', [
-            'profile' => $request->user()->clientProfile->load('user'),
+            'profile' => $client->load('user'),
+            'recent' => $recent,
         ]);
     }
 

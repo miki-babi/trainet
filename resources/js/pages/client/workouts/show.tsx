@@ -9,6 +9,7 @@ import {
     Repeat,
     SkipForward,
     StickyNote,
+    Timer,
     Trophy,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -68,6 +69,11 @@ export default function WorkoutRun({ session, personalRecords }: Props) {
         });
     };
 
+    const ordered = [...session.exercises].sort((a, b) => a.order - b.order);
+    const exerciseDone = ordered.map(
+        (se) => (se.sets ?? []).length > 0 && se.sets.every((s) => s.status === 'done'),
+    );
+
     const allSets = session.exercises.flatMap((e) => e.sets ?? []);
     const doneSets = allSets.filter((s) => s.status === 'done').length;
     const totalSets = allSets.length;
@@ -94,6 +100,7 @@ export default function WorkoutRun({ session, personalRecords }: Props) {
                                 {completed && ` · ${Math.round(volume)} kg volume`}
                             </p>
                         </div>
+                        <Timer className="size-4.5 shrink-0 text-muted-foreground" />
                         <SaveIndicator state={saveState} />
                         {inProgress && session.status === 'in_progress' && (
                             <Button
@@ -123,28 +130,60 @@ export default function WorkoutRun({ session, personalRecords }: Props) {
                     </Card>
                 )}
 
+                {/* Exercise progress dots */}
+                <div className="flex items-center justify-center gap-2">
+                    {ordered.map((se, i) => (
+                        <span
+                            key={se.id}
+                            title={se.exercise.name}
+                            className={cn(
+                                'flex size-8 items-center justify-center rounded-full text-xs font-bold transition-colors',
+                                exerciseDone[i]
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'bg-muted text-muted-foreground',
+                            )}
+                        >
+                            {exerciseDone[i] ? <Check className="size-4" /> : i + 1}
+                        </span>
+                    ))}
+                </div>
+
                 {/* Exercises */}
                 <div className="space-y-4">
-                    {session.exercises
-                        .sort((a, b) => a.order - b.order)
-                        .map((se) => (
-                            <ExerciseCard
-                                key={se.id}
-                                sessionExercise={se}
-                                pr={personalRecords[se.exercise_id]}
-                                editable={inProgress}
-                                onPatchSet={(set, data) =>
-                                    patch(`/app/session-exercises/${se.id}/sets/${set.id}`, data)
-                                }
-                                onAddSet={() =>
-                                    router.post(`/app/session-exercises/${se.id}/sets`, {}, { preserveScroll: true })
-                                }
-                                onSkip={(reason) =>
-                                    router.post(`/app/session-exercises/${se.id}/skip`, { reason }, { preserveScroll: true })
-                                }
-                                onSwap={() => setSwapTarget(se)}
-                            />
-                        ))}
+                    {ordered.map((se) => {
+                            const sets = se.sets ?? [];
+                            const allDone = sets.length > 0 && sets.every((s) => s.status === 'done');
+                            return (
+                                <ExerciseCard
+                                    key={se.id}
+                                    sessionExercise={se}
+                                    allDone={allDone}
+                                    pr={personalRecords[se.exercise_id]}
+                                    editable={inProgress}
+                                    onToggleAll={() =>
+                                        sets.forEach((set) => {
+                                            const target = allDone ? 'pending' : 'done';
+                                            if (set.status !== target) {
+                                                patch(
+                                                    `/app/session-exercises/${se.id}/sets/${set.id}`,
+                                                    { status: target },
+                                                );
+                                            }
+                                        })
+                                    }
+                                    onPatchSet={(set, data) =>
+                                        patch(`/app/session-exercises/${se.id}/sets/${set.id}`, data)
+                                    }
+                                    onAddSet={() =>
+                                        router.post(`/app/session-exercises/${se.id}/sets`, {}, { preserveScroll: true })
+                                    }
+                                    onSkip={(reason) =>
+                                        router.post(`/app/session-exercises/${se.id}/skip`, { reason }, { preserveScroll: true })
+                                    }
+                                    onSwap={() => setSwapTarget(se)}
+                                />
+                            );
+                        })}
                 </div>
 
                 {/* Notes + complete */}
@@ -239,23 +278,26 @@ export default function WorkoutRun({ session, personalRecords }: Props) {
 
 function ExerciseCard({
     sessionExercise: se,
+    allDone,
     pr,
     editable,
+    onToggleAll,
     onPatchSet,
     onAddSet,
     onSkip,
     onSwap,
 }: {
     sessionExercise: SessionExercise;
+    allDone: boolean;
     pr?: PersonalRecord;
     editable: boolean;
+    onToggleAll: () => void;
     onPatchSet: (set: WorkoutSet, data: Parameters<typeof router.put>[1] & object) => void;
     onAddSet: () => void;
     onSkip: (reason: string | null) => void;
     onSwap: () => void;
 }) {
     const skipped = se.status === 'skipped';
-    const done = se.status === 'done';
     const target = [
         se.target_sets && se.target_reps ? `${se.target_sets}×${se.target_reps}` : null,
         se.target_load ? `${se.target_load} kg` : null,
@@ -270,11 +312,22 @@ function ExerciseCard({
             <CardContent className="space-y-3">
                 <Accordion type="multiple">
                     <AccordionItem value="ex" className="border-none">
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-3">
+                            <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/15 text-lg font-bold text-primary">
+                                {se.exercise.media_url ? (
+                                    <img
+                                        src={se.exercise.media_url}
+                                        alt=""
+                                        className="size-12 object-cover"
+                                    />
+                                ) : (
+                                    se.exercise.name.charAt(0)
+                                )}
+                            </span>
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
                                     <AccordionTrigger className="p-0 hover:no-underline">
-                                        <span className="font-semibold">{se.exercise.name}</span>
+                                        <span className="truncate font-semibold">{se.exercise.name}</span>
                                     </AccordionTrigger>
                                     {se.replaced_exercise_id && (
                                         <Badge variant="outline" className="text-xs">
@@ -284,7 +337,6 @@ function ExerciseCard({
                                     {skipped && (
                                         <StatusChip tone="danger">Skipped</StatusChip>
                                     )}
-                                    {done && <StatusChip tone="success">Done</StatusChip>}
                                     {pr && (
                                         <Badge variant="secondary" className="gap-1 text-xs">
                                             <Trophy className="size-3" /> PR {pr.value} kg
@@ -292,9 +344,24 @@ function ExerciseCard({
                                     )}
                                 </div>
                                 <p className="mt-0.5 text-xs text-muted-foreground">
-                                    Target: {target || 'free'}
+                                    {(se.sets ?? []).length} sets · {target || 'free'}
                                 </p>
                             </div>
+                            {editable && !skipped && (
+                                <button
+                                    type="button"
+                                    title={allDone ? 'Unmark exercise' : 'Mark exercise done'}
+                                    onClick={onToggleAll}
+                                    className={cn(
+                                        'flex size-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+                                        allDone
+                                            ? 'border-success bg-success text-white'
+                                            : 'border-muted-foreground/40 text-transparent hover:border-success/60',
+                                    )}
+                                >
+                                    <Check className="size-4" />
+                                </button>
+                            )}
                             {editable && !skipped && (
                                 <div className="flex gap-1">
                                     {se.exercise.alternatives && se.exercise.alternatives.length > 0 && (

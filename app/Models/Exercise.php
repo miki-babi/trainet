@@ -62,7 +62,7 @@ class Exercise extends Model
     {
         $media = $this->relationLoaded('media') ? $this->media->first() : $this->media()->first();
 
-        return $media ? Storage::url($media->path) : null;
+        return $media ? self::resolveMediaPath($media->path) : null;
     }
 
     /** @return array<int, string> */
@@ -70,7 +70,12 @@ class Exercise extends Model
     {
         $media = $this->relationLoaded('media') ? $this->media : $this->media()->get();
 
-        return $media->map(fn ($m) => Storage::url($m->path))->values()->all();
+        return $media->map(fn ($m) => self::resolveMediaPath($m->path))->values()->all();
+    }
+
+    public static function resolveMediaPath(string $path): string
+    {
+        return str_starts_with($path, 'http') ? $path : Storage::url($path);
     }
 
     protected function casts(): array

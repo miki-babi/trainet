@@ -14,6 +14,7 @@ use App\Models\ClientTag;
 use App\Models\Conversation;
 use App\Models\NutritionAssignment;
 use App\Models\NutritionTarget;
+use App\Models\ProfessionalClientAssignment;
 use App\Models\ProgressPhoto;
 use App\Models\WorkoutSession;
 use Illuminate\Http\RedirectResponse;
@@ -35,29 +36,53 @@ class ClientController extends Controller
         $search = $request->string('search')->toString();
         $tag = $request->string('tag')->toString();
 
+        $status = $request->string('status')->toString();
+
+        $pendingCheckinClientIds = CheckInSubmission::query()
+            ->where('status', 'submitted')
+            ->pluck('client_id')
+            ->all();
+
         $clients = ClientProfile::query()
-            ->with(['user', 'tags', 'programAssignments' => fn ($q) => $q->where('status', 'active')->with('programVersion.program')])
+            ->with(['user', 'tags', 'programAssignments' => fn ($q) => $q->where('status', 'active')->with('programVersion.program'), 'professionalAssignments' => fn ($q) => $q->where('workspace_id', $workspaceId)])
             ->whereHas('professionalAssignments', fn ($q) => $q->where('workspace_id', $workspaceId)->where('status', 'active'))
             ->when($search, fn ($q) => $q->whereHas('user', fn ($u) => $u->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
             ->when($tag, fn ($q) => $q->whereHas('tags', fn ($t) => $t->where('client_tags.id', $tag)))
             ->get()
-            ->map(function (ClientProfile $client) {
+            ->map(function (ClientProfile $client) use ($pendingCheckinClientIds) {
                 $lastSession = WorkoutSession::query()
                     ->where('client_id', $client->id)
                     ->where('status', WorkoutSessionStatus::Completed)
                     ->max('scheduled_for');
 
+                $needsAttention = in_array($client->id, $pendingCheckinClientIds)
+                    || ! $lastSession
+                    || $lastSession < today()->subDays(10)->toDateString();
+
+                $relationships = $client->professionalAssignments
+                    ->where('status', 'active')
+                    ->pluck('relationship_type')
+                    ->map(fn ($r) => $r->value)
+                    ->unique()
+                    ->map(fn ($r) => $r === 'nutritionist' ? 'Nutrition' : 'Training')
+                    ->values();
+
                 return [
                     'id' => $client->id,
                     'name' => $client->user->name,
+                    'avatar' => $client->user->avatar,
                     'email' => $client->user->email,
                     'onboarding' => $client->onboarding_status?->value,
                     'goals' => $client->goals_summary,
                     'tags' => $client->tags->map(fn ($t) => ['id' => $t->id, 'name' => $t->name, 'color' => $t->color]),
                     'program' => $client->programAssignments->first()?->programVersion?->program?->name,
+                    'relationship' => $relationships->implode(' · '),
                     'last_active' => $lastSession,
+                    'status' => $needsAttention ? 'needs_attention' : 'on_track',
                 ];
-            });
+            })
+            ->when($status === 'attention', fn ($c) => $c->where('status', 'needs_attention')->values())
+            ->when($status === 'on_track', fn ($c) => $c->where('status', 'on_track')->values());
 
         $user = $request->user();
         $conversations = Conversation::query()
@@ -77,13 +102,53 @@ class ClientController extends Controller
             ])
             ->values();
 
+        $pendingRequests = ProfessionalClientAssignment::query()
+            ->with('client.user')
+            ->where('workspace_id', $workspaceId)
+            ->where('status', 'pending')
+            ->latest()
+            ->get()
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'client_name' => $a->client->user->name,
+                'relationship_type' => $a->relationship_type->value,
+                'requested_at' => $a->created_at->diffForHumans(),
+            ]);
+
         return Inertia::render('pro/clients/index', [
             'tab' => $request->string('tab', 'clients')->toString(),
             'clients' => $clients,
             'tags' => ClientTag::where('workspace_id', $workspaceId)->get(),
-            'filters' => ['search' => $search, 'tag' => $tag],
+            'filters' => ['search' => $search, 'tag' => $tag, 'status' => $status],
             'conversations' => $conversations,
+            'pendingRequests' => $pendingRequests,
         ]);
+    }
+
+    public function approveRequest(Request $request, ProfessionalClientAssignment $assignment): RedirectResponse
+    {
+        abort_unless(
+            $assignment->workspace_id === $this->workspaceId($request)
+                && $assignment->status->value === 'pending',
+            403,
+        );
+
+        $assignment->update(['status' => 'active']);
+
+        return back();
+    }
+
+    public function declineRequest(Request $request, ProfessionalClientAssignment $assignment): RedirectResponse
+    {
+        abort_unless(
+            $assignment->workspace_id === $this->workspaceId($request)
+                && $assignment->status->value === 'pending',
+            403,
+        );
+
+        $assignment->delete();
+
+        return back();
     }
 
     public function show(Request $request, ClientProfile $clientProfile): Response

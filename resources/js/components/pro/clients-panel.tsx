@@ -27,15 +27,18 @@ import { useInitials } from '@/hooks/use-initials';
 export type ClientRow = {
     id: number;
     name: string;
+    avatar: string | null;
     email: string;
     onboarding: string | null;
     goals: string | null;
     tags: { id: number; name: string; color: string | null }[];
     program: string | null;
+    relationship: string | null;
     last_active: string | null;
+    status: 'on_track' | 'needs_attention';
 };
 
-export type ClientFilters = { search: string; tag: string };
+export type ClientFilters = { search: string; tag: string; status: string };
 
 export function ClientsPanel({
     clients,
@@ -54,10 +57,14 @@ export function ClientsPanel({
     const page = usePage<{ inviteLink?: string }>();
     const inviteLink = page.props.inviteLink as string | undefined;
 
-    const applyFilters = (next: { search?: string; tag?: string }) => {
+    const applyFilters = (next: { search?: string; tag?: string; status?: string }) => {
         router.get(
             '/pro/clients',
-            { search: next.search ?? search, tag: next.tag ?? filters.tag },
+            {
+                search: next.search ?? search,
+                tag: next.tag ?? filters.tag,
+                status: next.status ?? filters.status,
+            },
             { preserveState: true, replace: true },
         );
     };
@@ -158,21 +165,35 @@ export function ClientsPanel({
 
             <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
                 <Filter className="size-4 shrink-0 text-muted-foreground" />
-                <Button
-                    variant={!filters.tag ? 'secondary' : 'ghost'}
-                    size="sm"
-                    className="shrink-0"
-                    onClick={() => applyFilters({ tag: '' })}
-                >
-                    All
-                </Button>
+                {(
+                    [
+                        { key: '', label: 'All' },
+                        { key: 'on_track', label: 'On track' },
+                        { key: 'attention', label: 'Needs attention' },
+                    ] as const
+                ).map((s) => (
+                    <Button
+                        key={s.key}
+                        variant={filters.status === s.key || (!filters.status && !s.key) ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="shrink-0"
+                        onClick={() => applyFilters({ status: s.key })}
+                    >
+                        {s.label}
+                    </Button>
+                ))}
+                <span className="mx-1 h-4 w-px shrink-0 bg-border" />
                 {tags.map((tag) => (
                     <Button
                         key={tag.id}
                         variant={filters.tag === String(tag.id) ? 'secondary' : 'ghost'}
                         size="sm"
                         className="shrink-0"
-                        onClick={() => applyFilters({ tag: String(tag.id) })}
+                        onClick={() =>
+                            applyFilters({
+                                tag: filters.tag === String(tag.id) ? '' : String(tag.id),
+                            })
+                        }
                     >
                         {tag.name}
                     </Button>
@@ -190,13 +211,15 @@ export function ClientsPanel({
                     {clients.map((client) => (
                         <ActivityTile
                             key={client.id}
-                            avatars={[getInitials(client.name)]}
+                            avatars={[{ initial: getInitials(client.name), src: client.avatar }]}
                             title={client.name}
                             subtitle={
-                                client.program ??
-                                (client.last_active
-                                    ? `Last session ${new Date(client.last_active + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
-                                    : 'No sessions yet')
+                                `${client.status === 'needs_attention' ? '⚠ ' : ''}` +
+                                (client.relationship ? `${client.relationship} · ` : '') +
+                                (client.program ??
+                                    (client.last_active
+                                        ? `Last session ${new Date(client.last_active + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+                                        : 'No sessions yet'))
                             }
                             href={`/pro/clients/${client.id}`}
                             variant={client.onboarding !== 'complete' ? 'blue' : 'dark'}

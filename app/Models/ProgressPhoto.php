@@ -23,7 +23,7 @@ class ProgressPhoto extends Model
 
     public function getUrlAttribute(): string
     {
-        return Storage::url($this->path);
+        return str_starts_with($this->path, 'http') ? $this->path : Storage::url($this->path);
     }
 
     protected function casts(): array

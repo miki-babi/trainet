@@ -31,6 +31,7 @@ use App\Models\Conversation;
 use App\Models\Equipment;
 use App\Models\Exercise;
 use App\Models\ExerciseCategory;
+use App\Models\ExerciseMedia;
 use App\Models\Food;
 use App\Models\FoodCategory;
 use App\Models\FoodLog;
@@ -51,11 +52,13 @@ use App\Models\NutritionPlan;
 use App\Models\NutritionPlanDay;
 use App\Models\NutritionPlanVersion;
 use App\Models\NutritionTarget;
+use App\Models\PackagePurchase;
 use App\Models\PersonalRecord;
 use App\Models\ProfessionalClientAssignment;
 use App\Models\ProfessionalProfile;
 use App\Models\ProgramAssignment;
 use App\Models\ProgressPhoto;
+use App\Models\ProPackage;
 use App\Models\TrainingDay;
 use App\Models\TrainingDayExercise;
 use App\Models\TrainingProgram;
@@ -70,7 +73,6 @@ use App\Models\WorkspaceMember;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 
 class DemoSeeder extends Seeder
 {
@@ -109,6 +111,7 @@ class DemoSeeder extends Seeder
             'timezone' => 'Europe/Berlin',
             'locale' => 'en',
             'unit_preference' => 'metric',
+            'avatar' => 'https://i.pravatar.cc/150?u='.urlencode($email),
         ]);
     }
 
@@ -124,19 +127,63 @@ class DemoSeeder extends Seeder
             'owner_id' => $this->coach->id,
         ]);
 
-        ProfessionalProfile::create([
+        $danaProfile = ProfessionalProfile::create([
             'user_id' => $this->coach->id,
             'professional_type' => ProfessionalType::Both,
             'bio' => 'Strength & conditioning coach, 10+ years. Powerlifting specialist.',
             'credentials' => 'CSCS, PN-1',
             'business_name' => 'Peak Performance Studio',
+            'specialties' => ['Strength', 'Muscle Gain', 'Powerlifting'],
+            'rating' => 4.9,
+            'reviews_count' => 124,
+            'price_label' => '$60/session',
+            'coaching_mode' => 'in_person',
+            'cover_image' => 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=75',
+            'certifications' => [
+                ['name' => 'Certified Strength & Conditioning Specialist', 'issuer' => 'NSCA', 'year' => 2015],
+                ['name' => 'Precision Nutrition Level 1', 'issuer' => 'Precision Nutrition', 'year' => 2019],
+                ['name' => 'FMS Level 2', 'issuer' => 'Functional Movement Systems', 'year' => 2021],
+            ],
+            'testimonials' => [
+                ['name' => 'Maya L.', 'text' => 'Dana rebuilt my squat from scratch — added 40kg in a year and zero pain. The weekly check-ins keep me honest.', 'rating' => 5],
+                ['name' => 'Pat R.', 'text' => 'Best coaching I have had. Programs adapt to my travel schedule without losing the thread.', 'rating' => 5],
+                ['name' => 'Kim T.', 'text' => 'Bouldering-specific strength work actually translated — sent my first V6 this season.', 'rating' => 5],
+            ],
         ]);
-        ProfessionalProfile::create([
+        $noorProfile = ProfessionalProfile::create([
             'user_id' => $this->nutritionist->id,
             'professional_type' => ProfessionalType::Nutritionist,
             'bio' => 'Registered dietitian focused on sustainable habit change.',
             'credentials' => 'RD, MSc Nutrition',
+            'specialties' => ['Weight Loss', 'Meal Prep', 'Sports Nutrition'],
+            'rating' => 4.8,
+            'reviews_count' => 87,
+            'price_label' => '$50/session',
+            'coaching_mode' => 'online',
+            'cover_image' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=75',
+            'certifications' => [
+                ['name' => 'Registered Dietitian', 'issuer' => 'CDR', 'year' => 2014],
+                ['name' => 'MSc Human Nutrition', 'issuer' => 'Wageningen University', 'year' => 2013],
+            ],
+            'testimonials' => [
+                ['name' => 'Sara K.', 'text' => 'Noor fixed my relationship with food. Down 8kg without ever feeling like I was dieting.', 'rating' => 5],
+                ['name' => 'Jonas M.', 'text' => 'Race-day fuelling finally sorted. The meal plans are realistic and actually tasty.', 'rating' => 5],
+            ],
         ]);
+
+        $this->seedPackages($danaProfile, [
+            ['Starter Plan', '4 sessions + weekly check-ins', 12000, 'per week', 'coaching', 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=600&q=75'],
+            ['Transformation Plan', '12-week coaching: nutrition & training', 30000, 'per month', 'coaching', 'https://images.unsplash.com/photo-1517963879433-6ad2b056d712?auto=format&fit=crop&w=600&q=75'],
+            ['8-Week Strength Builder', 'Self-guided powerbuilding program', 4900, 'one-time', 'program', 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?auto=format&fit=crop&w=600&q=75'],
+            ['Performance Meal Blueprint', 'Done-for-you meal plan + grocery guide', 3900, 'one-time', 'meal_plan', 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=600&q=75'],
+        ]);
+        $this->seedPackages($noorProfile, [
+            ['Nutrition Kickstart', 'Assessment + 2-week meal plan', 9000, 'one-time', 'meal_plan', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=75'],
+            ['Ongoing Coaching', 'Monthly plan + chat support', 8000, 'per month', 'coaching', 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&w=600&q=75'],
+            ['Plant-Forward Athlete Plan', '4-week sports nutrition meal plan', 5900, 'one-time', 'meal_plan', 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?auto=format&fit=crop&w=600&q=75'],
+        ]);
+
+        $this->seedMarketplacePros();
 
         foreach ([
             [$this->coach, WorkspaceMemberRole::Owner],
@@ -225,6 +272,136 @@ class DemoSeeder extends Seeder
                 'channel' => 'telegram',
                 'enabled' => true,
             ]);
+        }
+
+        // Demo package purchases — drives pro revenue/analytics stats
+        $packages = ProPackage::where('professional_profile_id', $danaProfile->id)->get();
+        $buyers = ['maya' => 45, 'sam' => 38, 'kim' => 26, 'pat' => 12];
+        $i = 0;
+        foreach ($buyers as $key => $daysAgo) {
+            $pkg = $packages[$i % $packages->count()];
+            PackagePurchase::create([
+                'pro_package_id' => $pkg->id,
+                'client_profile_id' => $this->clients[$key]->id,
+                'workspace_id' => $this->workspace->id,
+                'professional_id' => $this->coach->id,
+                'amount_cents' => $pkg->price,
+                'status' => 'paid',
+                'purchased_at' => now()->subDays($daysAgo),
+            ]);
+            $i++;
+        }
+    }
+
+    /** @param array<int, array{0: string, 1: string, 2: int, 3: string, 4?: string, 5?: string}> $packages */
+    private function seedPackages(ProfessionalProfile $profile, array $packages): void
+    {
+        foreach ($packages as $i => $package) {
+            ProPackage::create([
+                'professional_profile_id' => $profile->id,
+                'name' => $package[0],
+                'description' => $package[1],
+                'price' => $package[2],
+                'billing_label' => $package[3],
+                'kind' => $package[4] ?? 'coaching',
+                'image_url' => $package[5] ?? null,
+                'sort_order' => $i,
+            ]);
+        }
+    }
+
+    private function seedMarketplacePros(): void
+    {
+        $pros = [
+            [
+                'Selam Tesfaye', 'selam@trainet.test', ProfessionalType::Trainer,
+                'Personal Trainer', 'Selam Fit Coaching',
+                'I help people build strength, confidence and healthy habits. My programs are tailored to your goals, lifestyle and experience level.',
+                'NASM-CPT', ['Strength', 'Weight Loss', 'Muscle Gain'], 4.9, 124, '$45/session', 'both',
+                'https://images.unsplash.com/photo-1571731956672-f2b94d7dd0cb?auto=format&fit=crop&w=900&q=75',
+                [
+                    ['Starter Plan', '3 sessions/week + habit tracking', 12000, 'per week', 'coaching', 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=600&q=75'],
+                    ['Transformation Plan', 'Full coaching package', 30000, 'per month', 'coaching', 'https://images.unsplash.com/photo-1550345332-09e3ac987658?auto=format&fit=crop&w=600&q=75'],
+                    ['Glute & Core Blueprint', '6-week self-guided program', 4500, 'one-time', 'program', 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=600&q=75'],
+                ],
+                [
+                    ['name' => 'NASM Certified Personal Trainer', 'issuer' => 'NASM', 'year' => 2018],
+                    ['name' => 'Corrective Exercise Specialist', 'issuer' => 'NASM', 'year' => 2020],
+                ],
+                [
+                    ['name' => 'Selam A.', 'text' => 'Lost 12kg and kept it off for a year. Selam makes you feel capable, not judged.', 'rating' => 5],
+                    ['name' => 'Dawit B.', 'text' => 'Her habit-based approach finally made the gym stick for me.', 'rating' => 4],
+                ],
+            ],
+            [
+                'Abene Girma', 'abene@trainet.test', ProfessionalType::Trainer,
+                'Performance Coach', 'Girma Athletics',
+                'Speed, power and athletic development for field-sport athletes. Remote programming with video review.',
+                'CSCS, USAW-1', ['Athletic Performance', 'Strength', 'Mobility'], 4.7, 96, '$40/session', 'online',
+                'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=900&q=75',
+                [
+                    ['Remote Programming', 'Custom program + weekly video review', 9500, 'per month', 'coaching', 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&w=600&q=75'],
+                    ['Sprint Mechanics Program', '8-week speed development plan', 6900, 'one-time', 'program', 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=600&q=75'],
+                ],
+                [
+                    ['name' => 'Certified Strength & Conditioning Specialist', 'issuer' => 'NSCA', 'year' => 2016],
+                    ['name' => 'USA Weightlifting Level 1', 'issuer' => 'USAW', 'year' => 2018],
+                ],
+                [
+                    ['name' => 'Yonas T.', 'text' => 'Dropped my 100m by 0.4s in one season. The video reviews are worth every cent.', 'rating' => 5],
+                ],
+            ],
+            [
+                'Hana Mano', 'hana@trainet.test', ProfessionalType::Nutritionist,
+                'Nutritionist', 'Mano Nutrition',
+                'Plant-forward sports nutrition and sustainable weight management without restrictive dieting.',
+                'RD, CSSD', ['Weight Loss', 'Healthy Eating', 'Sports Nutrition'], 4.8, 103, '$50/session', 'in_person',
+                'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=900&q=75',
+                [
+                    ['Coaching', 'Monthly check-ins + plan updates', 11000, 'per month', 'coaching', 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?auto=format&fit=crop&w=600&q=75'],
+                    ['Meal Reset', '21-day guided meal plan', 7500, 'one-time', 'meal_plan', 'https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=75'],
+                    ['Family Meal Prep Pack', 'Batch-cooking plan for busy households', 5500, 'one-time', 'meal_plan', 'https://images.unsplash.com/photo-1466637574441-749b8f19452f?auto=format&fit=crop&w=600&q=75'],
+                ],
+                [
+                    ['name' => 'Registered Dietitian', 'issuer' => 'CDR', 'year' => 2012],
+                    ['name' => 'Board Certified Specialist in Sports Dietetics', 'issuer' => 'CSSD', 'year' => 2017],
+                ],
+                [
+                    ['name' => 'Lidiya G.', 'text' => 'Hana\'s plant-forward approach gave me energy I did not know I was missing.', 'rating' => 5],
+                    ['name' => 'Meron S.', 'text' => 'Down 6kg in three months while still eating injera daily. Sustainable and kind.', 'rating' => 5],
+                ],
+            ],
+        ];
+
+        foreach ($pros as [$name, $email, $type, $roleLabel, $business, $bio, $credentials, $specialties, $rating, $reviews, $priceLabel, $mode, $cover, $packages, $certifications, $testimonials]) {
+            $user = $this->makeUser($name, $email);
+            $workspace = Workspace::create([
+                'name' => $business,
+                'type' => 'solo',
+                'owner_id' => $user->id,
+            ]);
+            WorkspaceMember::create([
+                'workspace_id' => $workspace->id,
+                'user_id' => $user->id,
+                'role' => WorkspaceMemberRole::Owner,
+                'status' => 'active',
+            ]);
+            $profile = ProfessionalProfile::create([
+                'user_id' => $user->id,
+                'professional_type' => $type,
+                'bio' => $bio,
+                'credentials' => $credentials,
+                'business_name' => $business,
+                'specialties' => $specialties,
+                'rating' => $rating,
+                'reviews_count' => $reviews,
+                'price_label' => $priceLabel,
+                'coaching_mode' => $mode,
+                'cover_image' => $cover,
+                'certifications' => $certifications,
+                'testimonials' => $testimonials,
+            ]);
+            $this->seedPackages($profile, $packages);
         }
     }
 
@@ -382,6 +559,26 @@ class DemoSeeder extends Seeder
             foreach ($alts as $alt) {
                 $this->exercises[$name]->alternatives()->attach($this->exercises[$alt]->id);
             }
+        }
+
+        // Hotlinked demo imagery per movement pattern
+        $images = [
+            'push' => 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=400&q=70',
+            'pull' => 'https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&w=400&q=70',
+            'squat' => 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=400&q=70',
+            'hinge' => 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?auto=format&fit=crop&w=400&q=70',
+            'lunge' => 'https://images.unsplash.com/photo-1434608519344-49d77a699e1d?auto=format&fit=crop&w=400&q=70',
+            'core' => 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=400&q=70',
+            'mobility' => 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=400&q=70',
+            'conditioning' => 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=400&q=70',
+        ];
+        $fallback = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=400&q=70';
+        foreach ($this->exercises as $exercise) {
+            ExerciseMedia::create([
+                'exercise_id' => $exercise->id,
+                'type' => 'image',
+                'path' => $images[$exercise->movement_pattern] ?? $fallback,
+            ]);
         }
     }
 
@@ -759,6 +956,43 @@ class DemoSeeder extends Seeder
             ['Mozzarella', 'Dairy', 280, 28, 3.1, 17, [['1 ball (125 g)', 125]]],
         ];
 
+        $foodImages = [
+            'Chicken breast' => 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=400&q=70',
+            'Salmon fillet' => 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=400&q=70',
+            'Eggs' => 'https://images.unsplash.com/photo-1506976785307-18a9fe5e0cde?auto=format&fit=crop&w=400&q=70',
+            'Greek yogurt 0%' => 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=400&q=70',
+            'Cottage cheese' => 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=400&q=70',
+            'Tofu' => 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=70',
+            'Tuna (canned)' => 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?auto=format&fit=crop&w=400&q=70',
+            'Protein powder' => 'https://images.unsplash.com/photo-1593095948071-474c5cc2989d?auto=format&fit=crop&w=400&q=70',
+            'White rice (cooked)' => 'https://images.unsplash.com/photo-1516684732162-798a0062be99?auto=format&fit=crop&w=400&q=70',
+            'Oats' => 'https://images.unsplash.com/photo-1517093157656-b9eccef91cb1?auto=format&fit=crop&w=400&q=70',
+            'Sweet potato' => 'https://images.unsplash.com/photo-1596097635121-14b63b7a0c19?auto=format&fit=crop&w=400&q=70',
+            'Whole wheat bread' => 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=400&q=70',
+            'Quinoa (cooked)' => 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=400&q=70',
+            'Pasta (cooked)' => 'https://images.unsplash.com/photo-1551462147-ff29053bfc14?auto=format&fit=crop&w=400&q=70',
+            'Banana' => 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=400&q=70',
+            'Apple' => 'https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?auto=format&fit=crop&w=400&q=70',
+            'Blueberries' => 'https://images.unsplash.com/photo-1498557850523-fd3d118b962e?auto=format&fit=crop&w=400&q=70',
+            'Orange' => 'https://images.unsplash.com/photo-1547514701-42782101795e?auto=format&fit=crop&w=400&q=70',
+            'Broccoli' => 'https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?auto=format&fit=crop&w=400&q=70',
+            'Spinach' => 'https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=400&q=70',
+            'Mixed salad' => 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=400&q=70',
+            'Bell pepper' => 'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?auto=format&fit=crop&w=400&q=70',
+            'Cucumber' => 'https://images.unsplash.com/photo-1604977042946-1eecc30f269e?auto=format&fit=crop&w=400&q=70',
+            'Carrots' => 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&w=400&q=70',
+            'Avocado' => 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&w=400&q=70',
+            'Olive oil' => 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=400&q=70',
+            'Almonds' => 'https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=400&q=70',
+            'Peanut butter' => 'https://images.unsplash.com/photo-1583802979149-4adfa3db5b9f?auto=format&fit=crop&w=400&q=70',
+            'Hummus' => 'https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=400&q=70',
+            'Dark chocolate 85%' => 'https://images.unsplash.com/photo-1511381939415-e44015466834?auto=format&fit=crop&w=400&q=70',
+            'Protein bar' => 'https://images.unsplash.com/photo-1571770003964-5e5c37b5e4ea?auto=format&fit=crop&w=400&q=70',
+            'Rice cakes' => 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=400&q=70',
+            'Milk 1.5%' => 'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=400&q=70',
+            'Mozzarella' => 'https://images.unsplash.com/photo-1541745537411-b8046dc6d66c?auto=format&fit=crop&w=400&q=70',
+        ];
+
         $foodModels = [];
         foreach ($foods as [$name, $cat, $kcal, $p, $c, $f, $portions]) {
             $food = Food::create([
@@ -768,6 +1002,7 @@ class DemoSeeder extends Seeder
                 'protein_g' => $p,
                 'carbs_g' => $c,
                 'fat_g' => $f,
+                'image_url' => $foodImages[$name] ?? null,
             ]);
             foreach ($portions as [$label, $grams]) {
                 FoodPortion::create(['food_id' => $food->id, 'label' => $label, 'grams' => $grams]);
@@ -806,8 +1041,14 @@ class DemoSeeder extends Seeder
                 ['Salmon fillet', 1, '1 fillet (170 g)'], ['Sweet potato', 1, '1 medium (150 g)'], ['Broccoli', 1, '1 cup (90 g)'],
             ]],
         ];
+        $mealImages = [
+            'Breakfast' => 'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?auto=format&fit=crop&w=400&q=70',
+            'Lunch' => 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=70',
+            'Snack' => 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=400&q=70',
+            'Dinner' => 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=400&q=70',
+        ];
         foreach ($meals as $i => [$name, $time, $items]) {
-            $meal = Meal::create(['nutrition_plan_day_id' => $day->id, 'name' => $name, 'time_hint' => $time, 'order' => $i + 1]);
+            $meal = Meal::create(['nutrition_plan_day_id' => $day->id, 'name' => $name, 'time_hint' => $time, 'order' => $i + 1, 'image_url' => $mealImages[$name] ?? null]);
             foreach ($items as [$foodName, $qty, $portionLabel]) {
                 $food = $foodModels[$foodName];
                 $portion = $food->portions()->where('label', $portionLabel)->first();
@@ -969,13 +1210,16 @@ class DemoSeeder extends Seeder
             'status' => GoalStatus::Active,
         ]);
 
-        // Placeholder progress photos (SVGs on public disk)
-        foreach ([['maya', 'front', 6], ['maya', 'side', 6], ['maya', 'front', 1]] as [$key, $label, $weeksAgo]) {
-            $path = "progress/{$key}-{$label}-{$weeksAgo}w.svg";
-            Storage::disk('public')->put($path, $this->placeholderSvg($label));
+        // Demo progress photos (hotlinked)
+        $progressImages = [
+            'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=400&q=70',
+            'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=400&q=70',
+            'https://images.unsplash.com/photo-1550345332-09e3ac987658?auto=format&fit=crop&w=400&q=70',
+        ];
+        foreach ([['maya', 'front', 6], ['maya', 'side', 6], ['maya', 'front', 1]] as $i => [$key, $label, $weeksAgo]) {
             ProgressPhoto::create([
                 'client_id' => $this->clients[$key]->id,
-                'path' => $path,
+                'path' => $progressImages[$i],
                 'taken_on' => now()->subWeeks($weeksAgo)->toDateString(),
                 'label' => $label,
             ]);
@@ -1194,17 +1438,5 @@ class DemoSeeder extends Seeder
         $mkAppt('pat', $consult, now()->addDays(3)->setTime(10, 30), 'pending');
         $mkAppt('kim', $session, now()->addDays(2)->setTime(9, 0), 'confirmed');
         $mkAppt('maya', $consult, now()->subWeek()->setTime(11, 0), 'completed')->update(['session_notes' => 'Reviewed 6-week block. Squat up 5 kg. Next: deload then volume block.']);
-    }
-
-    private function placeholderSvg(string $label): string
-    {
-        return <<<SVG
-<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600">
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d7e8df"/><stop offset="1" stop-color="#a8c9ba"/></linearGradient></defs>
-  <rect width="400" height="600" fill="url(#g)"/>
-  <text x="200" y="300" font-family="sans-serif" font-size="28" fill="#2d5a46" text-anchor="middle">Progress photo</text>
-  <text x="200" y="340" font-family="sans-serif" font-size="18" fill="#4a7a64" text-anchor="middle">{$label}</text>
-</svg>
-SVG;
     }
 }

@@ -193,6 +193,7 @@ export type Meal = {
     time_hint: string | null;
     notes: string | null;
     order: number;
+    image_url?: string | null;
     items?: MealItem[];
 };
 

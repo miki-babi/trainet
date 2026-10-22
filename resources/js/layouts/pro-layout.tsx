@@ -2,9 +2,10 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     Apple,
     CalendarDays,
-    ClipboardCheck,
     ChartColumn,
+    ClipboardCheck,
     ClipboardList,
+    CreditCard,
     Dumbbell,
     Ellipsis,
     LayoutDashboard,
@@ -12,6 +13,7 @@ import {
     MessagesSquare,
     Settings,
     Users,
+    Wallet,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import {
@@ -29,6 +31,24 @@ import { useNavDirection } from '@/hooks/use-nav-direction';
 import { cn } from '@/lib/utils';
 import type { Auth } from '@/types';
 
+const sidebarNav = [
+    { title: 'Dashboard', href: '/pro/today', icon: LayoutDashboard },
+    { title: 'Clients', href: '/pro/clients', icon: Users },
+    { title: 'Programs', href: '/pro/programs', icon: ClipboardList },
+    { title: 'Meal Plans', href: '/pro/nutrition', icon: Apple },
+    { title: 'Messages', href: '/pro/messages', icon: MessagesSquare, matchExact: true },
+    { title: 'Calendar', href: '/pro/calendar', icon: CalendarDays },
+    { title: 'Analytics', href: '/pro/reports', icon: ChartColumn },
+    { title: 'Payments', href: '/pro/payments', icon: Wallet },
+];
+
+const sidebarWorkspace = [
+    { title: 'Check-ins', href: '/pro/check-ins', icon: ClipboardCheck },
+    { title: 'Exercises', href: '/pro/exercises', icon: Dumbbell },
+    { title: 'Content hub', href: '/pro/content', icon: ClipboardList },
+    { title: 'Team', href: '/pro/members', icon: Users },
+];
+
 const tabs = [
     { title: 'Today', href: '/pro/today', icon: LayoutDashboard },
     { title: 'Content', href: '/pro/content', icon: ClipboardList },
@@ -43,6 +63,7 @@ const moreSections = [
             { title: 'Calendar', href: '/pro/calendar', icon: CalendarDays },
             { title: 'Check-ins', href: '/pro/check-ins', icon: ClipboardCheck },
             { title: 'Messages', href: '/pro/clients?tab=messages', icon: MessagesSquare },
+            { title: 'Payments', href: '/pro/payments', icon: CreditCard },
         ],
     },
     {
@@ -89,19 +110,79 @@ export default function ProLayout({ children }: { children: ReactNode }) {
         none: '',
     }[direction];
 
+    const sidebarItem = (item: { title: string; href: string; icon: typeof Users; matchExact?: boolean }) => {
+        const active = item.matchExact
+            ? url === item.href || url.startsWith(item.href + '/')
+            : isActive(item.href);
+        return (
+            <Link
+                key={item.title}
+                href={item.href}
+                className={cn(
+                    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
+                    active
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-neutral-400 hover:bg-white/10 hover:text-white',
+                )}
+            >
+                <item.icon className="size-4.5" />
+                {item.title}
+            </Link>
+        );
+    };
+
     return (
-        <div className="flex min-h-svh flex-col bg-background">
+        <div className="min-h-svh bg-background">
+            {/* Desktop sidebar */}
+            <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col bg-neutral-950 text-white lg:flex">
+                <div className="flex items-center gap-2.5 px-5 pt-6 pb-8">
+                    <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                        <Dumbbell className="size-5" />
+                    </span>
+                    <span className="text-lg font-bold tracking-tight">Trainet</span>
+                </div>
+
+                <nav className="flex-1 space-y-1 overflow-y-auto px-3">
+                    {sidebarNav.map(sidebarItem)}
+                    <p className="px-3 pt-5 pb-1 text-[11px] font-semibold tracking-wider text-neutral-500 uppercase">
+                        Workspace
+                    </p>
+                    {sidebarWorkspace.map(sidebarItem)}
+                </nav>
+
+                <div className="border-t border-white/10 p-3">
+                    <Link
+                        href="/pro/settings"
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-white/10"
+                    >
+                        <Avatar className="size-9">
+                            <AvatarImage src={user?.avatar} />
+                            <AvatarFallback className="bg-primary/20 text-xs text-primary">
+                                {getInitials(user?.name ?? '?')}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold">{user?.name}</p>
+                            <p className="truncate text-xs text-neutral-400">
+                                {props.currentWorkspace?.name ?? 'Professional'}
+                            </p>
+                        </div>
+                    </Link>
+                </div>
+            </aside>
+
             <main
                 key={url}
                 className={cn(
-                    'mx-auto w-full max-w-3xl flex-1 px-4 pb-24 pt-4 motion-reduce:animate-none',
+                    'mx-auto w-full max-w-3xl flex-1 px-4 pb-24 pt-4 motion-reduce:animate-none lg:ml-64 lg:max-w-5xl lg:px-8 lg:pt-8 lg:pb-12',
                     pageAnim,
                 )}
             >
                 {children}
             </main>
 
-            <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+            {/* Mobile bottom nav */}
+            <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
                 <div className="mx-auto grid max-w-3xl grid-cols-5">
                     {tabs.map((tab) => {
                         const active = isActive(tab.href);
@@ -110,6 +191,7 @@ export default function ProLayout({ children }: { children: ReactNode }) {
                             <Link
                                 key={tab.title}
                                 href={tab.href}
+                                aria-label={tab.title}
                                 className={cn(
                                     'flex flex-col items-center gap-0.5 py-1.5 transition-colors active:scale-95',
                                     active

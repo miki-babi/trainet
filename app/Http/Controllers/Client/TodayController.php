@@ -26,13 +26,13 @@ class TodayController extends Controller
 
         // Today's workout session, or the next scheduled one.
         $session = WorkoutSession::query()
-            ->with('trainingDay.exercises.exercise')
+            ->with('trainingDay.exercises.exercise.media')
             ->where('client_id', $client->id)
             ->whereDate('scheduled_for', $today)
             ->first();
 
         $nextSession = $session ? null : WorkoutSession::query()
-            ->with('trainingDay.exercises.exercise')
+            ->with('trainingDay.exercises.exercise.media')
             ->where('client_id', $client->id)
             ->whereDate('scheduled_for', '>', $today)
             ->where('status', WorkoutSessionStatus::Scheduled)
@@ -89,12 +89,25 @@ class TodayController extends Controller
             'fat_g' => (float) $todayLogs->flatMap->items->sum('fat_g'),
         ];
 
-        $planDay = NutritionAssignment::query()
-            ->with('planVersion.days.meals.items.food', 'planVersion.days.meals.items.portion')
+        $assignment = NutritionAssignment::query()
+            ->with(
+                'planVersion.days.meals.items.food',
+                'planVersion.days.meals.items.portion',
+                'planVersion.days.meals.items.recipe',
+            )
             ->where('client_id', $client->id)
             ->where('status', 'active')
-            ->first()
-            ?->planVersion?->days?->first();
+            ->first();
+
+        // Rotate through the plan's days based on how far into the assignment we are.
+        $planDay = null;
+        $days = $assignment?->planVersion?->days;
+        if ($days?->isNotEmpty()) {
+            $offset = $assignment->starts_on
+                ? max(0, (int) $assignment->starts_on->diffInDays($today))
+                : 0;
+            $planDay = $days->get($offset % $days->count());
+        }
 
         // Habits.
         $habits = HabitAssignment::query()
@@ -128,20 +141,54 @@ class TodayController extends Controller
             ->sortByDesc(fn (Conversation $c) => $c->lastMessage?->created_at)
             ->first();
 
+        $activeSession = $session ?? $nextSession;
+        $exerciseCount = $activeSession?->trainingDay?->exercises?->count() ?? 0;
+        $workoutImage = $activeSession?->trainingDay?->exercises
+            ?->first()?->exercise?->media_url;
+
         return Inertia::render('client/today', [
             'clientName' => $client->user->name,
+            'clientAvatar' => $client->user->avatar,
             'onboardingComplete' => $client->onboarding_status?->value === 'complete',
+            'workoutMeta' => [
+                'exercise_count' => $exerciseCount,
+                'est_minutes' => $exerciseCount ? max(20, $exerciseCount * 9) : null,
+                'image' => $workoutImage,
+            ],
             'session' => $session,
             'nextSession' => $nextSession,
             'week' => $week,
             'nutrition' => [
                 'targets' => $targets,
                 'totals' => $totals,
+                'planTitle' => $planDay?->title,
                 'planMeals' => $planDay?->meals?->map(fn ($m) => [
                     'id' => $m->id,
                     'name' => $m->name,
                     'time_hint' => $m->time_hint,
-                    'item_count' => $m->items->count(),
+                    'image_url' => $m->image_url,
+                    'items' => $m->items->map(fn ($i) => [
+                        'id' => $i->id,
+                        'name' => $i->food?->name ?? $i->recipe?->name ?? 'Item',
+                        'portion' => $i->portion
+                            ? "{$i->quantity} × {$i->portion->label}"
+                            : ($i->quantity ? ($i->quantity * 100).' g' : null),
+                        'kcal' => $i->food
+                            ? (int) round($i->food->calories * ($i->portion ? $i->portion->grams * $i->quantity : $i->quantity * 100) / 100)
+                            : null,
+                        'food' => $i->food?->only(['name', 'calories', 'protein_g', 'carbs_g', 'fat_g', 'fiber_g', 'sodium_mg', 'serving_description', 'image_url']),
+                    ])->values(),
+                    'kcal' => (int) $m->items->sum(fn ($i) => $i->food
+                        ? $i->food->calories * ($i->portion ? $i->portion->grams * $i->quantity : $i->quantity * 100) / 100
+                        : 0),
+                    'logged' => $todayLogs->contains('meal_name', $m->name),
+                    'logged_item_ids' => (function () use ($m, $todayLogs) {
+                        $foodIds = $todayLogs->firstWhere('meal_name', $m->name)?->items->pluck('food_id');
+
+                        return $foodIds
+                            ? $m->items->filter(fn ($i) => $i->food?->id && $foodIds->contains($i->food->id))->pluck('id')->values()
+                            : [];
+                    })(),
                 ]),
             ],
             'habits' => $habits,

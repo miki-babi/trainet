@@ -1,14 +1,24 @@
-import { Head, router } from '@inertiajs/react';
-import { Save } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import {
+    Apple,
+    CalendarDays,
+    ClipboardCheck,
+    History,
+    MessagesSquare,
+    Save,
+    Sparkles,
+} from 'lucide-react';
 import { useState } from 'react';
-import { PageHeader } from '@/components/trainet/page-header';
 import { SaveIndicator, useSaveState } from '@/components/trainet/save-indicator';
 import { SectionCard } from '@/components/trainet/section-card';
+import { StatusChip } from '@/components/trainet/status-chip';
+import { ListRow } from '@/components/trainet/list-row';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import type { WorkoutSession } from '@/types';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -25,9 +35,10 @@ type Props = {
         goals_summary: string | null;
         user: { name: string; email: string; timezone: string | null };
     };
+    recent: WorkoutSession[];
 };
 
-export default function ProfileEdit({ profile }: Props) {
+export default function ProfileEdit({ profile, recent }: Props) {
     const { state: saveState, markSaving, markSaved, markError } = useSaveState();
     const [form, setForm] = useState({
         name: profile.user.name,
@@ -67,6 +78,57 @@ export default function ProfileEdit({ profile }: Props) {
                         </Button>
                     </div>
                 </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                    {[
+                        { title: 'Nutrition', href: '/app/nutrition', icon: Apple },
+                        { title: 'Messages', href: '/app/messages', icon: MessagesSquare },
+                        { title: 'Check-ins', href: '/app/check-ins', icon: ClipboardCheck },
+                        { title: 'Appointments', href: '/app/appointments', icon: CalendarDays },
+                        { title: 'Habits', href: '/app/habits', icon: Sparkles },
+                        { title: 'History', href: '/app/history', icon: History },
+                    ].map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className="flex flex-col items-center gap-1.5 rounded-2xl bg-card py-3.5 text-xs font-medium ring-1 ring-border transition-colors hover:ring-primary/50"
+                        >
+                            <item.icon className="size-5 text-primary" />
+                            {item.title}
+                        </Link>
+                    ))}
+                </div>
+
+                <SectionCard
+                    title="Recent sessions"
+                    action={
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link href="/app/history">All history</Link>
+                        </Button>
+                    }
+                >
+                    {recent.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                            No completed sessions yet — your first one is coming.
+                        </p>
+                    ) : (
+                        <div className="divide-y">
+                            {recent.map((s) => (
+                                <ListRow
+                                    key={s.id}
+                                    title={s.training_day?.title ?? 'Workout'}
+                                    subtitle={new Date(s.scheduled_for + 'T00:00:00').toLocaleDateString('en-GB', {
+                                        weekday: 'short',
+                                        day: 'numeric',
+                                        month: 'short',
+                                    })}
+                                    trailing={<StatusChip tone="success">Done</StatusChip>}
+                                    href={`/app/workouts/${s.id}`}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </SectionCard>
 
                 <SectionCard title="Account">
                     <div className="grid gap-4 sm:grid-cols-2">

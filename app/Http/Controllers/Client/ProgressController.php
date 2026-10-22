@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\ClientMetricEntry;
+use App\Models\Conversation;
 use App\Models\Goal;
+use App\Models\Message;
 use App\Models\MetricDefinition;
 use App\Models\ProgressPhoto;
 use Illuminate\Http\RedirectResponse;
@@ -39,6 +41,7 @@ class ProgressController extends Controller
                 ->get(),
             'goals' => Goal::query()->where('client_id', $client->id)->orderByDesc('created_at')->get(),
             'photos' => ProgressPhoto::query()->where('client_id', $client->id)->orderByDesc('taken_on')->get(),
+            'hasPro' => $client->activeProfessionals()->exists(),
         ]);
     }
 
@@ -119,6 +122,41 @@ class ProgressController extends Controller
             'path' => $path,
             'taken_on' => $validated['taken_on'] ?? today(),
             'label' => $validated['label'] ?? null,
+        ]);
+
+        return back();
+    }
+
+    /** Post a snapshot of the client's latest metrics into their coach conversation. */
+    public function share(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $client = $user->clientProfile;
+        $pro = $client->activeProfessionals()->with('professional')->first()?->professional;
+
+        $conversation = $pro ? Conversation::query()
+            ->where('type', 'direct')
+            ->whereHas('members', fn ($q) => $q->where('user_id', $user->id))
+            ->whereHas('members', fn ($q) => $q->where('user_id', $pro->id))
+            ->first() : null;
+
+        abort_unless($conversation, 422, 'No coach conversation to share with yet.');
+
+        $latest = fn (string $key) => ClientMetricEntry::query()
+            ->where('client_id', $client->id)
+            ->whereHas('metric', fn ($q) => $q->where('key', $key))
+            ->orderByDesc('observed_on')
+            ->first();
+
+        $parts = collect([
+            'weight' => $latest('weight'),
+            'body_fat' => $latest('body_fat'),
+        ])->filter()->map(fn ($e) => "{$e->metric->name}: {$e->value} {$e->unit}")->implode(' · ');
+
+        Message::create([
+            'conversation_id' => $conversation->id,
+            'sender_id' => $user->id,
+            'body' => $parts ? "Progress update — {$parts}" : 'Shared my progress — take a look!',
         ]);
 
         return back();
