@@ -1,0 +1,7 @@
+# PHP + Node providers are auto-detected; PHP version comes from composer.json.
+# The start command below mirrors Nixpacks' default (prestart + php-fpm + nginx)
+# and prepends boot steps the base image is missing:
+#   - /var/log/nginx must exist or nginx exits with "could not open error log file"
+#   - the sqlite file must exist before migrations, and storage must be writable
+[start]
+cmd = "mkdir -p /var/log/nginx && touch database/database.sqlite && chmod -R a+rwX storage bootstrap/cache database && php artisan config:cache && php artisan storage:link && php artisan migrate --force && node /assets/scripts/prestart.mjs /assets/nginx.template.conf /nginx.conf && (php-fpm -y /assets/php-fpm.conf & nginx -c /nginx.conf)"
