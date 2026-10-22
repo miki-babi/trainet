@@ -32,6 +32,12 @@ Route::get('/optimize-clear', function () {
     return Artisan::output();
 })->name('optimize.clear');
 
+Route::get('/storage-link', function () {
+    Artisan::call('storage:link');
+
+    return Artisan::output();
+})->name('storage.link');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
 });
