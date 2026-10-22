@@ -156,6 +156,50 @@ test('client logs a meal with just a photo', function () {
         ->and(Storage::disk('public')->exists($log->photo_path))->toBeTrue();
 });
 
+test('client can delete a logged meal with a photo', function () {
+    $maya = User::where('email', 'maya@trainet.test')->firstOrFail();
+    Storage::fake('public');
+    $this->actingAs($maya);
+
+    $photoPath = UploadedFile::fake()->image('meal.jpg')->store('meal-photos', 'public');
+    $log = FoodLog::create([
+        'client_id' => $maya->clientProfile->id,
+        'logged_on' => today(),
+        'meal_name' => 'Dinner',
+        'photo_path' => $photoPath,
+    ]);
+    $item = FoodLogItem::create([
+        'food_log_id' => $log->id,
+        'food_id' => Food::firstOrFail()->id,
+        'grams' => 150,
+        'calories' => 200,
+        'protein_g' => 20,
+        'carbs_g' => 10,
+        'fat_g' => 5,
+        'logged_at' => now(),
+    ]);
+
+    $this->delete("/app/nutrition/logs/{$log->id}")->assertRedirect();
+
+    expect(FoodLog::find($log->id))->toBeNull()
+        ->and(FoodLogItem::find($item->id))->toBeNull()
+        ->and(Storage::disk('public')->exists($photoPath))->toBeFalse();
+});
+
+test('client cannot delete another client\'s logged meal', function () {
+    $maya = User::where('email', 'maya@trainet.test')->firstOrFail();
+    $other = ClientProfile::where('id', '!=', $maya->clientProfile->id)->firstOrFail();
+
+    $log = FoodLog::create([
+        'client_id' => $other->id,
+        'logged_on' => today(),
+        'meal_name' => 'Lunch',
+    ]);
+
+    $this->actingAs($maya)->delete("/app/nutrition/logs/{$log->id}")->assertForbidden();
+    expect(FoodLog::find($log->id))->not->toBeNull();
+});
+
 test('client submits a pending check-in', function () {
     $maya = User::where('email', 'maya@trainet.test')->firstOrFail();
     $this->actingAs($maya);

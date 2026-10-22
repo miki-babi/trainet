@@ -11,6 +11,7 @@ use App\Models\NutritionTarget;
 use App\Models\WaterLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -123,6 +124,20 @@ class NutritionController extends Controller
         }
 
         return redirect("/app/nutrition?date={$validated['logged_on']}");
+    }
+
+    public function destroy(Request $request, FoodLog $foodLog): RedirectResponse
+    {
+        abort_unless($foodLog->client_id === $request->user()->clientProfile->id, 403);
+
+        $photoPath = $foodLog->photo_path;
+        $foodLog->delete();
+
+        if ($photoPath) {
+            Storage::disk('public')->delete($photoPath);
+        }
+
+        return back();
     }
 
     public function destroyItem(Request $request, FoodLogItem $foodLogItem): RedirectResponse

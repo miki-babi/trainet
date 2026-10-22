@@ -47,6 +47,7 @@ Route::middleware(['auth', 'client'])->prefix('app')->name('client.')->group(fun
     Route::get('/nutrition', [NutritionController::class, 'index'])->name('nutrition.index');
     Route::get('/nutrition/log', [NutritionController::class, 'create'])->name('nutrition.create');
     Route::post('/nutrition/log', [NutritionController::class, 'store'])->name('nutrition.store');
+    Route::delete('/nutrition/logs/{foodLog}', [NutritionController::class, 'destroy'])->name('nutrition.logs.destroy');
     Route::delete('/nutrition/items/{foodLogItem}', [NutritionController::class, 'destroyItem'])->name('nutrition.items.destroy');
     Route::post('/water', [NutritionController::class, 'storeWater'])->name('water.store');
 

@@ -51,6 +51,9 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
     const remove = (itemId: number) =>
         router.delete(`/app/nutrition/items/${itemId}`, { preserveScroll: true });
 
+    const removeLog = (logId: number) =>
+        router.delete(`/app/nutrition/logs/${logId}`, { preserveScroll: true });
+
     return (
         <>
             <Head title="Nutrition" />
@@ -190,9 +193,19 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
                             {logs.map((log) => (
                                 (log.items.length > 0 || log.photo_path) && (
                                     <div key={log.id}>
-                                        <p className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                            {log.meal_name ?? 'Meal'}
-                                        </p>
+                                        <div className="mb-1 flex items-center justify-between">
+                                            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                                {log.meal_name ?? 'Meal'}
+                                            </p>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="size-7 text-muted-foreground hover:text-destructive"
+                                                onClick={() => removeLog(log.id)}
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </Button>
+                                        </div>
                                         {log.photo_path && (
                                             <div className="mb-2">
                                                 <img
