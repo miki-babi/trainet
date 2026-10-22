@@ -1,0 +1,37 @@
+.git
+.github
+.dockerignore
+Dockerfile
+compose.yaml
+compose.production.yaml
+
+# Dependencies — installed fresh inside the image
+node_modules
+vendor
+
+# Secrets / local environment
+.env
+.env.*
+!.env.example
+
+# Build artifacts — regenerated inside the image
+public/build
+public/hot
+public/storage
+resources/js/actions
+resources/js/routes
+resources/js/wayfinder
+
+# Local data and caches
+database/*.sqlite
+bootstrap/cache/*.php
+storage/logs/*.log
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+
+# Dev-only files
+tests
+.phpunit.result.cache
+*.md

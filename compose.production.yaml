@@ -1,0 +1,26 @@
+# Production deployment: docker compose -f compose.production.yaml up -d
+# Requires a .env file with at least APP_KEY and APP_URL set.
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+            target: production
+        image: trainet
+        ports:
+            - '8080:8080'
+        env_file:
+            - .env
+        environment:
+            APP_ENV: production
+            APP_DEBUG: 'false'
+            DB_CONNECTION: sqlite
+            DB_DATABASE: /data/database.sqlite
+        volumes:
+            - trainet-data:/data
+            - trainet-storage:/var/www/html/storage/app
+        restart: unless-stopped
+
+volumes:
+    trainet-data:
+    trainet-storage:
