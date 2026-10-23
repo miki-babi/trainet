@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { goBack } from '@/lib/back';
+import { useTelegramMainButton } from '@/hooks/use-telegram';
 import { cn } from '@/lib/utils';
 
 type FoodPortion = { id: number; label: string; grams: number };
@@ -74,11 +75,6 @@ export default function NutritionLog({ mealName, date, foods }: Props) {
         );
     };
 
-    const results = useMemo(() => {
-        const q = query.toLowerCase();
-        return q ? foods.filter((f) => f.name.toLowerCase().includes(q)) : foods;
-    }, [foods, query]);
-
     const submitSearch = () => {
         router.post('/app/nutrition/log', {
             meal_name: meal,
@@ -86,6 +82,17 @@ export default function NutritionLog({ mealName, date, foods }: Props) {
             items: cart.map((c) => ({ food_id: c.food.id, grams: c.grams })),
         });
     };
+
+    useTelegramMainButton({
+        text: mode === 'photo' ? `LOG ${meal.toUpperCase()}` : `LOG ${cart.length} ITEM${cart.length === 1 ? '' : 'S'}`,
+        onClick: mode === 'photo' ? submitPhoto : submitSearch,
+        disabled: mode === 'photo' ? !photo : cart.length === 0,
+    });
+
+    const results = useMemo(() => {
+        const q = query.toLowerCase();
+        return q ? foods.filter((f) => f.name.toLowerCase().includes(q)) : foods;
+    }, [foods, query]);
 
     const cartTotals = cart.reduce(
         (acc, c) => ({

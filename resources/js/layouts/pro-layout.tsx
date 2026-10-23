@@ -12,6 +12,7 @@ import {
     LogOut,
     MessagesSquare,
     Settings,
+    ShieldAlert,
     Users,
     Wallet,
 } from 'lucide-react';
@@ -88,6 +89,7 @@ export default function ProLayout({ children }: { children: ReactNode }) {
         auth: Auth;
         unreadMessages?: number;
         currentWorkspace?: { name: string };
+        proApproval?: string;
     }>();
     const [moreOpen, setMoreOpen] = useState(false);
     const getInitials = useInitials();
@@ -178,6 +180,32 @@ export default function ProLayout({ children }: { children: ReactNode }) {
                     pageAnim,
                 )}
             >
+                {props.proApproval === 'pending' && (
+                    <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-200">
+                        <ShieldAlert className="mt-0.5 size-5 shrink-0 text-amber-600" />
+                        <div>
+                            <p className="font-semibold">Profile pending approval</p>
+                            <p className="text-amber-800/80 dark:text-amber-200/70">
+                                You can set up your workspace now — your profile
+                                goes live in the client marketplace once a
+                                platform admin approves it.
+                            </p>
+                        </div>
+                    </div>
+                )}
+                {props.proApproval === 'rejected' && (
+                    <div className="mb-4 flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm">
+                        <ShieldAlert className="mt-0.5 size-5 shrink-0 text-destructive" />
+                        <div>
+                            <p className="font-semibold">Profile not approved</p>
+                            <p className="text-muted-foreground">
+                                Your professional profile wasn't approved.
+                                Update your details in Settings and contact
+                                support if you think this is a mistake.
+                            </p>
+                        </div>
+                    </div>
+                )}
                 {children}
             </main>
 

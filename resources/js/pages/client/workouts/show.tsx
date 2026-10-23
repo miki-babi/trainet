@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { ExercisePicker } from '@/components/trainet/exercise-picker';
 import { SaveIndicator, useSaveState } from '@/components/trainet/save-indicator';
 import { goBack } from '@/lib/back';
+import { useTelegramMainButton } from '@/hooks/use-telegram';
 import { StatusChip } from '@/components/trainet/status-chip';
 import {
     Accordion,
@@ -70,6 +71,17 @@ export default function WorkoutRun({ session, personalRecords }: Props) {
     };
 
     const ordered = [...session.exercises].sort((a, b) => a.order - b.order);
+
+    useTelegramMainButton({
+        text: session.status === 'paused' ? 'RESUME WORKOUT' : 'FINISH WORKOUT',
+        onClick: () =>
+            router.post(
+                session.status === 'paused'
+                    ? `/app/workouts/${session.id}/resume`
+                    : `/app/workouts/${session.id}/complete`,
+            ),
+        visible: inProgress,
+    });
     const exerciseDone = ordered.map(
         (se) => (se.sets ?? []).length > 0 && se.sets.every((s) => s.status === 'done'),
     );

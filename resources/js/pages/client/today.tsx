@@ -210,7 +210,9 @@ export default function ClientToday({
 
                 {/* Today's Plan */}
                 <section className="space-y-3">
-                    <h2 className="font-semibold">Today&apos;s Plan</h2>
+                    <h2 className="px-1 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">
+                        Today&apos;s plan
+                    </h2>
                     <div className="space-y-3">
                         <button
                             type="button"
@@ -249,7 +251,7 @@ export default function ClientToday({
 
                 {/* Coach message */}
                 {latestMessage?.body && (
-                    <SectionCard title="Message from your coach">
+                    <SectionCard label="Message from your coach">
                         <Link
                             href={`/app/messages/${latestMessage.conversation_id}`}
                             className="flex items-start gap-3"
@@ -269,9 +271,11 @@ export default function ClientToday({
 
                 {/* Nutrition */}
                 <section className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <h2 className="font-semibold">Nutrition</h2>
-                        <Link href="/app/nutrition" className="text-sm text-primary hover:underline">
+                    <div className="flex items-center justify-between px-1">
+                        <h2 className="text-[13px] font-medium tracking-wide text-muted-foreground uppercase">
+                            Nutrition
+                        </h2>
+                        <Link href="/app/nutrition" className="text-[13px] font-medium text-accent-foreground">
                             Details
                         </Link>
                     </div>

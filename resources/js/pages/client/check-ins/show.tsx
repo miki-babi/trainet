@@ -68,7 +68,7 @@ export default function CheckInShow({ submission }: Props) {
                     </Card>
                 )}
 
-                <SectionCard title="Your answers">
+                <SectionCard label="Your answers">
                     <div className="divide-y">
                         {submission.answers.map((a) => (
                             <div key={a.id} className="py-3 first:pt-0 last:pb-0">

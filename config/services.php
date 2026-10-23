@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'bot_username' => env('TELEGRAM_BOT_USERNAME'),
+        // Max age (seconds) accepted for Mini App initData auth_date freshness.
+        'auth_max_age' => env('TELEGRAM_AUTH_MAX_AGE', 86400),
+    ],
+
 ];

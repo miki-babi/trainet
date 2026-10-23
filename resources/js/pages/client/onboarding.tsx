@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 import { useState } from 'react';
+import { useTelegramMainButton } from '@/hooks/use-telegram';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -63,6 +64,13 @@ export default function Onboarding({ profile }: Props) {
     const save = (finish: boolean) => {
         router.put('/app/onboarding', { ...form, consent: form.consent, finish });
     };
+
+    const isLast = step === STEPS.length - 1;
+    useTelegramMainButton({
+        text: isLast ? 'FINISH SETUP' : 'CONTINUE',
+        onClick: isLast ? () => save(true) : () => { save(false); setStep(step + 1); },
+        disabled: isLast && !form.consent,
+    });
 
     return (
         <>

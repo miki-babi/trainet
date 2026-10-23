@@ -74,6 +74,12 @@
 }
 
 :root {
+    /* Safe-area insets — JS (lib/telegram.ts) overrides with Telegram values when embedded */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+:root {
     /* Light base, emerald accent — Trainet */
     --background: oklch(0.99 0.003 120);
     --foreground: oklch(0.22 0.02 130);
@@ -162,6 +168,69 @@
     --sidebar-ring: oklch(0.7 0.17 164);
 }
 
+/*
+ * Telegram Mini App scope — applied to client + auth layouts.
+ * Maps the Telegram-injected --tg-theme-* variables onto our semantic tokens.
+ * Outside Telegram the var() fallbacks produce a Telegram-blue theme.
+ */
+.tg {
+    --background: var(--tg-theme-secondary-bg-color, #efeff4);
+    --foreground: var(--tg-theme-text-color, #000000);
+    --card: var(--tg-theme-section-bg-color, #ffffff);
+    --card-foreground: var(--tg-theme-text-color, #000000);
+    --popover: var(--tg-theme-section-bg-color, #ffffff);
+    --popover-foreground: var(--tg-theme-text-color, #000000);
+    --primary: var(--tg-theme-button-color, #2481cc);
+    --primary-foreground: var(--tg-theme-button-text-color, #ffffff);
+    --secondary: var(--tg-theme-secondary-bg-color, #e9e9ee);
+    --secondary-foreground: var(--tg-theme-text-color, #000000);
+    --muted: var(--tg-theme-secondary-bg-color, #e9e9ee);
+    --muted-foreground: var(--tg-theme-hint-color, #8e8e93);
+    --accent: var(--tg-theme-secondary-bg-color, #e9e9ee);
+    --accent-foreground: var(--tg-theme-accent-text-color, #2481cc);
+    --highlight: var(--tg-theme-accent-text-color, #2481cc);
+    --highlight-foreground: var(--tg-theme-button-text-color, #ffffff);
+    --destructive: var(--tg-theme-destructive-text-color, #ff3b30);
+    --destructive-foreground: #ffffff;
+    --border: var(--tg-theme-section-separator-color, rgb(60 60 67 / 12%));
+    --input: var(--tg-theme-section-separator-color, rgb(60 60 67 / 12%));
+    --ring: var(--tg-theme-link-color, #2481cc);
+    --radius: 0.875rem;
+    font-family:
+        -apple-system,
+        'SF Pro Text',
+        'Segoe UI',
+        Roboto,
+        'Helvetica Neue',
+        ui-sans-serif,
+        system-ui,
+        sans-serif;
+}
+
+.dark .tg {
+    --background: var(--tg-theme-secondary-bg-color, #0e0e0e);
+    --foreground: var(--tg-theme-text-color, #ffffff);
+    --card: var(--tg-theme-section-bg-color, #1c1c1e);
+    --card-foreground: var(--tg-theme-text-color, #ffffff);
+    --popover: var(--tg-theme-section-bg-color, #1c1c1e);
+    --popover-foreground: var(--tg-theme-text-color, #ffffff);
+    --primary: var(--tg-theme-button-color, #3e88c5);
+    --primary-foreground: var(--tg-theme-button-text-color, #ffffff);
+    --secondary: var(--tg-theme-secondary-bg-color, #2c2c2e);
+    --secondary-foreground: var(--tg-theme-text-color, #ffffff);
+    --muted: var(--tg-theme-secondary-bg-color, #2c2c2e);
+    --muted-foreground: var(--tg-theme-hint-color, #98989f);
+    --accent: var(--tg-theme-secondary-bg-color, #2c2c2e);
+    --accent-foreground: var(--tg-theme-accent-text-color, #6ab2f2);
+    --highlight: var(--tg-theme-accent-text-color, #6ab2f2);
+    --highlight-foreground: var(--tg-theme-button-text-color, #ffffff);
+    --destructive: var(--tg-theme-destructive-text-color, #ff453a);
+    --destructive-foreground: #ffffff;
+    --border: var(--tg-theme-section-separator-color, rgb(255 255 255 / 10%));
+    --input: var(--tg-theme-section-separator-color, rgb(255 255 255 / 10%));
+    --ring: var(--tg-theme-link-color, #6ab2f2);
+}
+
 @layer base {
     * {
         @apply border-border;
@@ -169,5 +238,26 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+
+    /* Telegram: inputs stay >=16px so iOS doesn't auto-zoom on focus. */
+    .tg :is(input, textarea, select) {
+        font-size: 16px;
+    }
+
+    /* Telegram: dialogs become bottom sheets on small screens. */
+    @media (width < 40rem) {
+        .tg [data-slot='dialog-content'] {
+            inset: auto 0 0 0;
+            translate: 0;
+            width: 100%;
+            max-width: 100%;
+            max-height: 88svh;
+            margin: 0;
+            overflow-y: auto;
+            border-radius: var(--radius) var(--radius) 0 0;
+            border-bottom: none;
+            padding-bottom: max(1.5rem, var(--safe-bottom));
+        }
     }
 }

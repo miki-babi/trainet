@@ -19,7 +19,7 @@ use App\Http\Controllers\Pro\SettingController;
 use App\Http\Controllers\Pro\TodayController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'professional'])->prefix('pro')->name('pro.')->group(function () {
+Route::middleware(['auth', 'verified', 'professional'])->prefix('pro')->name('pro.')->group(function () {
     Route::get('/today', [TodayController::class, 'index'])->name('today');
 
     // Clients

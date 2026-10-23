@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { getTg, isInTelegram } from '@/lib/telegram';
 
 export type ResolvedAppearance = 'light' | 'dark';
 export type Appearance = ResolvedAppearance | 'system';
@@ -55,8 +56,31 @@ const subscribe = (callback: () => void) => {
 
 const notify = (): void => listeners.forEach((listener) => listener());
 
+/**
+ * Inside a Telegram WebView the user's Telegram theme wins: sync the .dark
+ * class to tg.colorScheme and keep following themeChanged events.
+ */
+const syncToTelegramTheme = (): void => {
+    const tg = getTg();
+    const apply = () => {
+        const isDark = tg?.colorScheme === 'dark';
+
+        document.documentElement.classList.toggle('dark', isDark);
+        document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+    };
+
+    apply();
+    tg?.onEvent('themeChanged', apply);
+};
+
 export function initializeTheme(): void {
     if (typeof window === 'undefined') {
+        return;
+    }
+
+    if (isInTelegram()) {
+        syncToTelegramTheme();
+
         return;
     }
 

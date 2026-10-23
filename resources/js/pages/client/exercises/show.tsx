@@ -19,7 +19,7 @@ export default function ExerciseShow({ exercise }: Props) {
                     <Button variant="ghost" size="sm" onClick={() => goBack('/app/exercises')}>
                         <ArrowLeft className="mr-1" /> Back
                     </Button>
-                    <h1 className="mt-1 text-2xl font-bold">{exercise.name}</h1>
+                    <h1 className="mt-1 text-[1.75rem] font-bold">{exercise.name}</h1>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                         <Badge variant="secondary" className="capitalize">
                             {exercise.difficulty}
@@ -61,17 +61,17 @@ export default function ExerciseShow({ exercise }: Props) {
                 )}
 
                 {exercise.instructions && (
-                    <SectionCard title="How to perform">
+                    <SectionCard label="How to perform">
                         <p className="text-sm leading-relaxed">{exercise.instructions}</p>
                     </SectionCard>
                 )}
                 {exercise.common_mistakes && (
-                    <SectionCard title="Common mistakes">
+                    <SectionCard label="Common mistakes">
                         <p className="text-sm leading-relaxed">{exercise.common_mistakes}</p>
                     </SectionCard>
                 )}
                 {exercise.safety_notes && (
-                    <SectionCard title="Safety">
+                    <SectionCard label="Safety">
                         <p className="flex gap-2 text-sm leading-relaxed">
                             <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
                             {exercise.safety_notes}
@@ -79,7 +79,7 @@ export default function ExerciseShow({ exercise }: Props) {
                     </SectionCard>
                 )}
                 {exercise.alternatives.length > 0 && (
-                    <SectionCard title="Alternatives">
+                    <SectionCard label="Alternatives">
                         <div className="divide-y">
                             {exercise.alternatives.map((alt) => (
                                 <button

@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, Send } from 'lucide-react';
 import { goBack } from '@/lib/back';
+import { useTelegramMainButton } from '@/hooks/use-telegram';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -50,6 +51,8 @@ export default function CheckInEdit({ submission, questions }: Props) {
         );
     };
 
+    useTelegramMainButton({ text: 'SUBMIT CHECK-IN', onClick: submit });
+
     return (
         <>
             <Head title="Weekly check-in" />
@@ -58,7 +61,7 @@ export default function CheckInEdit({ submission, questions }: Props) {
                     <Button variant="ghost" size="sm" onClick={() => goBack('/app/check-ins')}>
                         <ArrowLeft className="mr-1" /> Back
                     </Button>
-                    <h1 className="mt-1 text-2xl font-bold">Weekly check-in</h1>
+                    <h1 className="mt-1 text-[1.75rem] font-bold">Weekly check-in</h1>
                     <p className="text-sm text-muted-foreground">
                         Due {new Date(submission.due_on + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>

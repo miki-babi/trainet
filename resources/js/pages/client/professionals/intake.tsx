@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useInitials } from '@/hooks/use-initials';
+import { useTelegramMainButton } from '@/hooks/use-telegram';
 import { mediaUrl } from '@/lib/media';
 
 type Professional = {
@@ -68,6 +69,13 @@ export default function MealPlanIntake({ professional: pro, package: pkg }: Prop
         });
     };
 
+    useTelegramMainButton({
+        text: 'SEND & ORDER',
+        onClick: submit,
+        disabled: !goal.trim(),
+        processing,
+    });
+
     return (
         <>
             <Head title={`${pkg.name} — intake`} />
@@ -80,7 +88,7 @@ export default function MealPlanIntake({ professional: pro, package: pkg }: Prop
                 </Link>
 
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Tell us about you</h1>
+                    <h1 className="text-[1.75rem] font-bold tracking-tight">Tell us about you</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         {pro.name} uses this to build your personalized meal plan.
                     </p>

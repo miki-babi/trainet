@@ -31,6 +31,7 @@ class ProfessionalController extends Controller
             ->pluck('status', 'professional_id');
 
         $professionals = ProfessionalProfile::query()
+            ->approved()
             ->with('user')
             ->when($search !== '', function ($q) use ($search) {
                 $q->where(fn ($w) => $w
@@ -74,6 +75,7 @@ class ProfessionalController extends Controller
             ]);
 
         $specialties = ProfessionalProfile::query()
+            ->approved()
             ->pluck('specialties')
             ->flatten()
             ->filter()
@@ -90,8 +92,10 @@ class ProfessionalController extends Controller
 
     public function show(Request $request, ProfessionalProfile $professionalProfile): Response
     {
+        abort_unless($professionalProfile->isApproved(), 404);
+
         $client = $request->user()->clientProfile;
-        $professionalProfile->load('user', 'packages');
+        $professionalProfile->load(['user', 'packages' => fn ($q) => $q->where('is_hidden', false)]);
 
         $purchasedIds = PackagePurchase::query()
             ->where('client_profile_id', $client->id)

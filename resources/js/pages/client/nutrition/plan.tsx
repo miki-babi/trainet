@@ -87,7 +87,7 @@ export default function NutritionPlan({ assignment }: Props) {
                 ) : (
                     <>
                         <div className="flex items-center gap-3">
-                            <h1 className="text-2xl font-bold tracking-tight">{version.plan.name}</h1>
+                            <h1 className="text-[1.75rem] font-bold tracking-tight">{version.plan.name}</h1>
                             <span className="text-xs text-muted-foreground">
                                 v{version.version_number}
                             </span>

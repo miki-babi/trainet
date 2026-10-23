@@ -353,8 +353,8 @@ test('client without a coach cannot share progress', function () {
         'name' => 'Solo Client',
         'email' => 'solo@trainet.test',
         'password' => 'password',
-        'email_verified_at' => now(),
     ]);
+    $solo->forceFill(['email_verified_at' => now()])->save();
     ClientProfile::create(['user_id' => $solo->id]);
 
     $this->actingAs($solo)->post('/app/progress/share')->assertUnprocessable();

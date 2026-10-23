@@ -281,7 +281,7 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos, hasP
                         </div>
                     </div>
                 ) : (
-                    <SectionCard title="Statistics">
+                    <SectionCard label="Statistics">
                         <p className="text-sm text-muted-foreground">
                             No measurements in this range — log one to see your stats.
                         </p>
@@ -337,7 +337,7 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos, hasP
 
                 {section === 'goals' &&
                     (goals.filter((g) => g.status === 'active').length > 0 ? (
-                    <SectionCard title="Goals">
+                    <SectionCard label="Goals">
                         <div className="space-y-4">
                             {goals
                                 .filter((g) => g.status === 'active')
@@ -367,7 +367,7 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos, hasP
                         </div>
                     </SectionCard>
                     ) : (
-                        <SectionCard title="Goals">
+                        <SectionCard label="Goals">
                             <p className="text-sm text-muted-foreground">
                                 No active goals yet — your coach can set them with you.
                             </p>
@@ -375,7 +375,7 @@ export default function ProgressIndex({ metrics, metricDefs, goals, photos, hasP
                     ))}
 
                 {section === 'photos' && (
-                <SectionCard title="Photos">
+                <SectionCard label="Photos">
                     {photos.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
                             Add your first progress photo — before/after comparisons come later.

@@ -18,7 +18,7 @@ use App\Http\Controllers\Client\WorkoutSessionExerciseController;
 use App\Http\Controllers\Client\WorkoutSetController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'client'])->prefix('app')->name('client.')->group(function () {
+Route::middleware(['auth', 'verified', 'client'])->prefix('app')->name('client.')->group(function () {
     Route::get('/today', [TodayController::class, 'index'])->name('today');
 
     Route::get('/onboarding', [OnboardingController::class, 'edit'])->name('onboarding.edit');

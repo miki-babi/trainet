@@ -36,7 +36,7 @@ export default function AppointmentsIndex({
             <Head title="Sessions" />
             <div className="space-y-5 py-5">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold tracking-tight">Sessions</h1>
+                    <h1 className="text-[1.75rem] font-bold tracking-tight">Sessions</h1>
                     <Button asChild>
                         <Link href="/app/appointments/book">
                             <CalendarPlus className="mr-1" /> Book
@@ -44,7 +44,7 @@ export default function AppointmentsIndex({
                     </Button>
                 </div>
 
-                <SectionCard title="Upcoming">
+                <SectionCard label="Upcoming">
                     {upcoming.length === 0 ? (
                         <EmptyState
                             icon={Calendar}
@@ -52,7 +52,7 @@ export default function AppointmentsIndex({
                             description="Book a session with your coach."
                         />
                     ) : (
-                        <div className="divide-y">
+                        <div >
                             {upcoming.map((a) => (
                                 <ListRow
                                     key={a.id}
@@ -93,11 +93,11 @@ export default function AppointmentsIndex({
                     )}
                 </SectionCard>
 
-                <SectionCard title="Past">
+                <SectionCard label="Past">
                     {past.length === 0 ? (
                         <p className="text-sm text-muted-foreground">No past sessions.</p>
                     ) : (
-                        <div className="divide-y">
+                        <div >
                             {past.map((a) => (
                                 <ListRow
                                     key={a.id}

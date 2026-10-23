@@ -11,6 +11,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { mediaUrl } from "@/lib/media";
+import { haptics } from "@/lib/telegram";
 import { cn } from "@/lib/utils";
 
 export type PlanMealConfirmItem = {
@@ -48,15 +49,18 @@ export function PlanMealConfirm({ meal, date, onClose }: Props) {
         setDetail(null);
     }, [meal]);
 
-    const toggle = (id: number) =>
+    const toggle = (id: number) => {
+        haptics.selection();
         setChecked((cur) =>
             cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
         );
+    };
 
     const confirm = () => {
         if (!meal || checked.length === 0) {
             return;
         }
+        haptics.impact('light');
         router.post(
             `/app/nutrition/plan-meals/${meal.id}/confirm`,
             { logged_on: date, item_ids: checked },

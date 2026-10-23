@@ -70,7 +70,7 @@ export default function ProfileEdit({ profile, recent }: Props) {
             <Head title="Profile" />
             <div className="mx-auto max-w-2xl space-y-5 py-5">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
+                    <h1 className="text-[1.75rem] font-bold tracking-tight">Profile</h1>
                     <div className="flex items-center gap-3">
                         <SaveIndicator state={saveState} />
                         <Button onClick={save} size="sm">
@@ -112,7 +112,7 @@ export default function ProfileEdit({ profile, recent }: Props) {
                             No completed sessions yet — your first one is coming.
                         </p>
                     ) : (
-                        <div className="divide-y">
+                        <div >
                             {recent.map((s) => (
                                 <ListRow
                                     key={s.id}
@@ -130,7 +130,7 @@ export default function ProfileEdit({ profile, recent }: Props) {
                     )}
                 </SectionCard>
 
-                <SectionCard title="Account">
+                <SectionCard label="Account">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                             <Label>Name</Label>
@@ -150,7 +150,7 @@ export default function ProfileEdit({ profile, recent }: Props) {
                     </div>
                 </SectionCard>
 
-                <SectionCard title="Body & training">
+                <SectionCard label="Body & training">
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                             <Label>Height (cm)</Label>
@@ -191,7 +191,7 @@ export default function ProfileEdit({ profile, recent }: Props) {
                     </div>
                 </SectionCard>
 
-                <SectionCard title="Goals & health">
+                <SectionCard label="Goals & health">
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label>Goals</Label>

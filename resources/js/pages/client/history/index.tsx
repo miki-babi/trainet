@@ -37,7 +37,7 @@ export default function HistoryIndex({ sessions }: { sessions: SessionRow[] }) {
         <>
             <Head title="History" />
             <div className="space-y-5 py-5">
-                <h1 className="text-2xl font-bold tracking-tight">Workout history</h1>
+                <h1 className="text-[1.75rem] font-bold tracking-tight">Workout history</h1>
                 {sessions.length === 0 ? (
                     <EmptyState
                         icon={Dumbbell}
@@ -46,8 +46,8 @@ export default function HistoryIndex({ sessions }: { sessions: SessionRow[] }) {
                     />
                 ) : (
                     Object.entries(grouped).map(([month, rows]) => (
-                        <SectionCard key={month} title={month}>
-                            <div className="divide-y">
+                        <SectionCard key={month} label={month}>
+                            <div >
                                 {rows.map((s) => (
                                     <ListRow
                                         key={s.id}

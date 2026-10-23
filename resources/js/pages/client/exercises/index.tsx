@@ -20,7 +20,7 @@ export default function ClientExercises({
         <>
             <Head title="Exercise library" />
             <div className="space-y-5 py-5">
-                <h1 className="text-2xl font-bold tracking-tight">Exercises</h1>
+                <h1 className="text-[1.75rem] font-bold tracking-tight">Exercises</h1>
                 <div className="relative">
                     <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
                     <Input

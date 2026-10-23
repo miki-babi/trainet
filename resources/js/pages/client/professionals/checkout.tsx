@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ChevronLeft, Lock, PackageCheck, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTelegramMainButton } from '@/hooks/use-telegram';
 import { useInitials } from '@/hooks/use-initials';
 
 type Professional = {
@@ -34,6 +35,9 @@ const typeLabels: Record<string, string> = {
 export default function PackageCheckout({ professional: pro, package: pkg }: Props) {
     const getInitials = useInitials();
     const price = (cents: number) => `$${(cents / 100).toLocaleString()}`;
+    const purchase = () => router.post(`/app/professionals/${pro.id}/packages/${pkg.id}`);
+
+    useTelegramMainButton({ text: `PAY ${price(pkg.price).toUpperCase()}`, onClick: purchase });
 
     return (
         <>
@@ -47,7 +51,7 @@ export default function PackageCheckout({ professional: pro, package: pkg }: Pro
                 </Link>
 
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Checkout</h1>
+                    <h1 className="text-[1.75rem] font-bold tracking-tight">Checkout</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Review your package before confirming.
                     </p>
@@ -103,7 +107,7 @@ export default function PackageCheckout({ professional: pro, package: pkg }: Pro
 
                 <Button
                     className="h-14 w-full rounded-2xl text-base font-semibold shadow-lg shadow-primary/30"
-                    onClick={() => router.post(`/app/professionals/${pro.id}/packages/${pkg.id}`)}
+                    onClick={purchase}
                 >
                     <Lock className="mr-2 size-4" /> Pay {price(pkg.price)}
                 </Button>

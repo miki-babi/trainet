@@ -1,0 +1,1 @@
+import{u as e}from"./jsx-runtime-BsM3_DYj.js";var t=!1;typeof window<`u`&&e.on(`navigate`,()=>{t=!0});function n(n=`/`){t&&window.history.length>1?window.history.back():e.visit(n)}export{n as t};

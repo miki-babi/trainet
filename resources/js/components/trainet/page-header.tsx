@@ -31,7 +31,7 @@ export function PageHeader({
                 </Button>
             )}
             <div className="min-w-0 flex-1">
-                <h1 className="truncate text-2xl font-extrabold tracking-tight">
+                <h1 className="truncate text-2xl font-extrabold tracking-tight [.tg_&]:text-[1.75rem] [.tg_&]:font-bold">
                     {title}
                 </h1>
                 {description && (

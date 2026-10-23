@@ -60,7 +60,7 @@ export default function BookAppointment({ types, professionals, professionalId, 
                     <Button variant="ghost" size="sm" onClick={() => goBack('/app/appointments')}>
                         <ArrowLeft className="mr-1" /> Sessions
                     </Button>
-                    <h1 className="mt-1 text-2xl font-bold">Book a session</h1>
+                    <h1 className="mt-1 text-[1.75rem] font-bold">Book a session</h1>
                 </div>
 
                 <div className="space-y-2">

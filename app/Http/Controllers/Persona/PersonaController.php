@@ -14,6 +14,8 @@ class PersonaController extends Controller
 {
     public function index(): Response
     {
+        abort_unless(config('trainet.demo'), 404);
+
         $personas = User::query()
             ->with(['clientProfile', 'professionalProfile', 'workspaceMember.workspace'])
             ->where(fn ($q) => $q->whereHas('clientProfile')->orWhereHas('workspaceMember'))
@@ -35,6 +37,8 @@ class PersonaController extends Controller
 
     public function store(Request $request, User $user): RedirectResponse
     {
+        abort_unless(config('trainet.demo'), 404);
+
         Auth::logout();
         Auth::login($user, remember: false);
         $request->session()->regenerate();

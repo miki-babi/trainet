@@ -46,7 +46,13 @@ class HandleInertiaRequests extends Middleware
                 'user' => $user,
             ],
             'persona' => $this->personaFor($user),
+            'demo' => (bool) config('trainet.demo'),
+            'telegram' => [
+                'enabled' => (bool) config('services.telegram.bot_token'),
+                'linked' => (bool) $user?->telegramAccounts()->exists(),
+            ],
             'currentWorkspace' => $user?->workspaceMember?->workspace?->only('id', 'name', 'type'),
+            'proApproval' => $user?->professionalProfile?->approval_status,
             'unreadMessages' => $user ? $this->unreadCount($user) : 0,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
@@ -56,6 +62,10 @@ class HandleInertiaRequests extends Middleware
     {
         if (! $user) {
             return null;
+        }
+
+        if ($user->isAdmin()) {
+            return 'admin';
         }
 
         return $user->clientProfile()->exists() ? 'client' : 'professional';

@@ -14,6 +14,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call(DemoSeeder::class);
+        if (config('trainet.demo')) {
+            // Demo mode: DemoSeeder seeds the shared catalog plus demo
+            // personas, plans, and sample tracking data.
+            $this->call(DemoSeeder::class);
+
+            return;
+        }
+
+        // Production: only the shared catalog data real users need.
+        $this->call(ReferenceSeeder::class);
     }
 }

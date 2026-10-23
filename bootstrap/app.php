@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\CheckAccountStatus;
+use App\Http\Middleware\EnsureAdmin;
 use App\Http\Middleware\EnsureClient;
 use App\Http\Middleware\EnsureProfessional;
 use App\Http\Middleware\HandleAppearance;
@@ -25,9 +27,11 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+            CheckAccountStatus::class,
         ]);
 
         $middleware->alias([
+            'admin' => EnsureAdmin::class,
             'client' => EnsureClient::class,
             'professional' => EnsureProfessional::class,
         ]);

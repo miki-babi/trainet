@@ -19,6 +19,9 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
+        {{-- Telegram Mini App SDK: injects --tg-theme-* variables and window.Telegram.WebApp when opened inside Telegram --}}
+        <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
         @fonts
 
         @viteReactRefresh

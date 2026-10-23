@@ -40,6 +40,10 @@ export function ListRow({
     const classes = cn(
         'flex w-full items-center gap-3 px-1 py-3 text-left transition-colors',
         (href || onClick) && 'hover:bg-accent/50 -mx-2 rounded-lg px-2 active:bg-accent active:scale-[0.99]',
+        // Telegram mini-app cells: full-bleed, hairline separators, no hover pill.
+        '[.tg_&]:mx-0 [.tg_&]:rounded-none [.tg_&]:px-4 [.tg_&]:py-3',
+        '[.tg_&]:border-b [.tg_&]:border-border/60 [.tg_&]:last:border-b-0',
+        (href || onClick) && '[.tg_&]:hover:bg-accent [.tg_&]:active:scale-100',
         className,
     );
 

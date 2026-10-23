@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useNavDirection } from '@/hooks/use-nav-direction';
+import { useTelegramBackButton } from '@/hooks/use-telegram';
+import { haptics } from '@/lib/telegram';
 import { cn } from '@/lib/utils';
 import type { Auth } from '@/types';
 
@@ -38,6 +40,10 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     const isActive = (href: string, extra?: string[]) =>
         url.startsWith(href) || (extra ?? []).some((m) => url.startsWith(m));
 
+    const pathname = url.split('?')[0];
+    const isTabRoot = tabs.some((tab) => pathname === tab.href);
+    useTelegramBackButton(!isTabRoot);
+
     const direction = useNavDirection(tabs.map((t) => t.href));
     const pageAnim = {
         push: 'animate-in slide-in-from-bottom-8 fade-in duration-300',
@@ -47,18 +53,19 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     }[direction];
 
     return (
-        <div className="flex min-h-svh flex-col bg-background">
+        <div className="tg flex min-h-svh flex-col bg-background">
             <main
                 key={url}
                 className={cn(
-                    'mx-auto w-full max-w-2xl flex-1 px-4 pb-24 pt-4 motion-reduce:animate-none',
+                    'mx-auto w-full max-w-2xl flex-1 px-4 pb-24 motion-reduce:animate-none',
+                    'pt-[max(1rem,var(--safe-top))]',
                     pageAnim,
                 )}
             >
                 {children}
             </main>
 
-            <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+            <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[max(env(safe-area-inset-bottom),var(--safe-bottom))] backdrop-blur">
                 <div className="mx-auto grid max-w-2xl grid-cols-5">
                     {tabs.map((tab) => {
                         const active = isActive(tab.href, tab.matchExtra);
@@ -67,6 +74,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
                                 key={tab.title}
                                 href={tab.href}
                                 aria-label={tab.title}
+                                onClick={() => haptics.selection()}
                                 className={cn(
                                     'flex flex-col items-center gap-0.5 py-1.5 transition-colors active:scale-95',
                                     active
@@ -74,15 +82,10 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
                                         : 'text-muted-foreground hover:text-foreground',
                                 )}
                             >
-                                <span
-                                    className={cn(
-                                        'flex size-9 items-center justify-center rounded-full transition-colors',
-                                        active && 'bg-primary text-primary-foreground',
-                                    )}
-                                >
-                                    <tab.icon className="size-5" />
+                                <tab.icon className="size-6" strokeWidth={active ? 2.25 : 1.75} />
+                                <span className={cn('text-[10px]', active ? 'font-semibold' : 'font-medium')}>
+                                    {tab.title}
                                 </span>
-                                <span className="text-[10px] font-medium">{tab.title}</span>
                             </Link>
                         );
                     })}

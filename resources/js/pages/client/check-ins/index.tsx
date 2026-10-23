@@ -23,7 +23,7 @@ export default function CheckInsIndex({ submissions }: { submissions: Submission
         <>
             <Head title="Check-ins" />
             <div className="space-y-5 py-5">
-                <h1 className="text-2xl font-bold tracking-tight">Check-ins</h1>
+                <h1 className="text-[1.75rem] font-bold tracking-tight">Check-ins</h1>
                 {submissions.length === 0 ? (
                     <EmptyState
                         icon={ClipboardCheck}

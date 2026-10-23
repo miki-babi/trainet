@@ -6,6 +6,7 @@ import type { FoodDetailData } from '@/components/trainet/food-detail';
 import { PlanMealConfirm } from '@/components/trainet/plan-meal-confirm';
 import { RingProgress } from '@/components/trainet/ring-progress';
 import { mediaUrl } from '@/lib/media';
+import { haptics } from '@/lib/telegram';
 import { SectionCard } from '@/components/trainet/section-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -91,7 +92,7 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
             <Head title="Nutrition" />
             <div className="space-y-5 py-5">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-2xl font-bold tracking-tight">Nutrition</h1>
+                    <h1 className="text-[1.75rem] font-bold tracking-tight">Nutrition</h1>
                     <Link
                         href="/app/nutrition/plan"
                         className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
@@ -250,18 +251,21 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
                     )}
                 </Card>
 
-                {/* Meals / Log / Goals tabs */}
-                <div className="grid grid-cols-3 gap-2">
+                {/* Meals / Log / Goals tabs — Telegram segmented control */}
+                <div className="flex gap-1 rounded-xl bg-muted p-1">
                     {TABS.map((t) => (
                         <button
                             key={t.value}
                             type="button"
-                            onClick={() => setTab(t.value)}
+                            onClick={() => {
+                                haptics.selection();
+                                setTab(t.value);
+                            }}
                             className={cn(
-                                'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                                'flex-1 rounded-lg py-1.5 text-sm font-medium transition-colors',
                                 tab === t.value
-                                    ? 'bg-primary text-primary-foreground'
-                                    : 'bg-muted text-muted-foreground',
+                                    ? 'bg-card text-foreground shadow-sm'
+                                    : 'text-muted-foreground',
                             )}
                         >
                             {t.label}
@@ -270,7 +274,7 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
                 </div>
 
                 {tab === 'goals' && (
-                    <SectionCard title="Daily targets">
+                    <SectionCard label="Daily targets">
                         <div className="space-y-3">
                             <div className="flex items-center justify-between text-sm">
                                 <span className="font-medium">Calories</span>
@@ -303,7 +307,7 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
 
                 {tab !== 'goals' && (
                 <SectionCard
-                    title="Water"
+                    label="Water"
                     action={
                         <Badge
                             variant="secondary"
@@ -341,7 +345,7 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
                 )}
 
                 {tab === 'meals' && !planDay && (
-                    <SectionCard title="Your plan">
+                    <SectionCard label="Your plan">
                         <EmptyState
                             icon={UtensilsCrossed}
                             title="No meal plan"
@@ -352,7 +356,7 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
 
                 {tab === 'log' && (
                 <SectionCard
-                    title="Food diary"
+                    label="Food diary"
                     action={
                         <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" className="size-7" onClick={() => shift(-1)}>

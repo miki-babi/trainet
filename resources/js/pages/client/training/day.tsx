@@ -30,7 +30,7 @@ export default function TrainingDayDetail({ day }: Props) {
                     <Button variant="ghost" size="sm" onClick={() => goBack('/app/training')}>
                         <ArrowLeft className="mr-1" /> Back
                     </Button>
-                    <h1 className="mt-1 text-2xl font-bold">{day.title}</h1>
+                    <h1 className="mt-1 text-[1.75rem] font-bold">{day.title}</h1>
                     <p className="text-sm text-muted-foreground">
                         {day.exercises.length} exercises · tap one for technique notes
                     </p>

@@ -190,7 +190,7 @@ export default function ProfessionalShow({ professional: pro }: { professional: 
                     </div>
 
                     <div className="min-w-0">
-                        <h1 className="truncate text-2xl font-bold tracking-tight">{pro.name}</h1>
+                        <h1 className="truncate text-[1.75rem] font-bold tracking-tight">{pro.name}</h1>
                         <p className="text-sm text-muted-foreground">
                             {typeLabels[pro.type]}
                             {pro.business_name ? ` · ${pro.business_name}` : ''}
@@ -226,7 +226,7 @@ export default function ProfessionalShow({ professional: pro }: { professional: 
                     {/* About */}
                     {(pro.bio || pro.credentials) && (
                         <section className="space-y-2">
-                            <h2 className="font-semibold">About</h2>
+                            <h2 className="px-1 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">About</h2>
                             {pro.bio && (
                                 <p className="text-sm leading-relaxed text-muted-foreground">{pro.bio}</p>
                             )}
@@ -242,7 +242,7 @@ export default function ProfessionalShow({ professional: pro }: { professional: 
                     {/* Certifications */}
                     {pro.certifications.length > 0 && (
                         <section className="space-y-2">
-                            <h2 className="font-semibold">Certifications</h2>
+                            <h2 className="px-1 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">Certifications</h2>
                             <div className="divide-y overflow-hidden rounded-2xl bg-card ring-1 ring-border">
                                 {pro.certifications.map((cert) => (
                                     <div key={cert.name} className="flex items-center gap-3 p-3.5">
@@ -262,7 +262,7 @@ export default function ProfessionalShow({ professional: pro }: { professional: 
                     {/* Packages — ongoing coaching */}
                     {coachingPackages.length > 0 && (
                         <section className="space-y-2">
-                            <h2 className="font-semibold">Coaching packages</h2>
+                            <h2 className="px-1 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">Coaching packages</h2>
                             <div className="grid grid-cols-2 gap-3">
                                 {coachingPackages.map((pkg) => (
                                     <OfferCard key={pkg.id} proId={pro.id} pkg={pkg} />
@@ -283,7 +283,7 @@ export default function ProfessionalShow({ professional: pro }: { professional: 
                     {/* One-time offers — programs & meal plans */}
                     {oneTimeOffers.length > 0 && (
                         <section className="space-y-2">
-                            <h2 className="font-semibold">Programs & meal plans</h2>
+                            <h2 className="px-1 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">Programs & meal plans</h2>
                             <div className="grid grid-cols-2 gap-3">
                                 {oneTimeOffers.map((pkg) => (
                                     <OfferCard key={pkg.id} proId={pro.id} pkg={pkg} />
@@ -295,7 +295,7 @@ export default function ProfessionalShow({ professional: pro }: { professional: 
                     {/* Testimonials */}
                     {pro.testimonials.length > 0 && (
                         <section className="space-y-2">
-                            <h2 className="font-semibold">Testimonials</h2>
+                            <h2 className="px-1 text-[13px] font-medium tracking-wide text-muted-foreground uppercase">Testimonials</h2>
                             <div className="space-y-3">
                                 {pro.testimonials.map((t) => (
                                     <figure

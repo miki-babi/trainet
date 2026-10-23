@@ -25,6 +25,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $timezone
  * @property string|null $unit_preference
  * @property string|null $status
+ * @property bool $is_admin
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -59,6 +60,11 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->hasOne(WorkspaceMember::class);
     }
 
+    public function telegramAccounts(): HasMany
+    {
+        return $this->hasMany(TelegramAccount::class);
+    }
+
     public function ownedWorkspaces(): HasMany
     {
         return $this->hasMany(Workspace::class, 'owner_id');
@@ -74,6 +80,16 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->clientProfile()->exists();
     }
 
+    public function isAdmin(): bool
+    {
+        return (bool) $this->is_admin;
+    }
+
+    public function isSuspended(): bool
+    {
+        return in_array($this->status, ['suspended', 'deleted'], true);
+    }
+
     /**
      * Get the attributes that should be cast.
      *
@@ -83,6 +99,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return [
             'email_verified_at' => 'datetime',
+            'is_admin' => 'boolean',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];

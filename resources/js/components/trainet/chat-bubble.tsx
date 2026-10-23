@@ -31,7 +31,7 @@ export function ChatBubble({
                     'max-w-[80%] rounded-2xl px-3.5 py-2 text-sm',
                     mine
                         ? 'rounded-br-md bg-primary text-primary-foreground'
-                        : 'rounded-bl-md bg-muted',
+                        : 'rounded-bl-md bg-muted [.tg_&]:bg-card',
                 )}
             >
                 {body}

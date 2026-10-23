@@ -101,7 +101,7 @@ export default function TrainingIndex({ assignment, upcoming, mealPlan }: Props)
         <>
             <Head title="Plans" />
             <div className="space-y-5 py-5">
-                <h1 className="text-2xl font-bold tracking-tight">Plans</h1>
+                <h1 className="text-[1.75rem] font-bold tracking-tight">Plans</h1>
 
                 {!assignment && !mealPlanVersion ? (
                     <EmptyState
@@ -156,7 +156,7 @@ export default function TrainingIndex({ assignment, upcoming, mealPlan }: Props)
                             description={version?.program.description ?? undefined}
                             action={<CoachAvatar coach={assignment?.assigned_by} />}
                         >
-                            <div className="divide-y">
+                            <div >
                                 {version?.days.map((day) => (
                                     <ListRow
                                         key={day.id}
@@ -179,8 +179,8 @@ export default function TrainingIndex({ assignment, upcoming, mealPlan }: Props)
                             </div>
                         </SectionCard>
 
-                        <SectionCard title="Schedule">
-                            <div className="divide-y">
+                        <SectionCard label="Schedule">
+                            <div >
                                 {upcoming.map((s) => (
                                     <ListRow
                                         key={s.id}
@@ -220,7 +220,7 @@ export default function TrainingIndex({ assignment, upcoming, mealPlan }: Props)
                                 description={mealPlanVersion.plan.description ?? undefined}
                                 action={<CoachAvatar coach={mealPlan?.assigned_by} />}
                             >
-                                <div className="divide-y">
+                                <div >
                                     {mealPlanVersion.days.map((day) => (
                                         <ListRow
                                             key={day.id}

@@ -66,7 +66,7 @@ export default function ProfessionalsIndex({ professionals, specialties, filters
             <Head title="Find Your Coach" />
             <div className="space-y-5 py-5">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Find Your Coach</h1>
+                    <h1 className="text-[1.75rem] font-bold tracking-tight">Find Your Coach</h1>
                     <p className="mt-1 text-sm text-muted-foreground">
                         Choose a trainer or nutritionist that fits your goals and style.
                     </p>

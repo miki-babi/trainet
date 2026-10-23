@@ -1,7 +1,10 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowRight, Dumbbell } from 'lucide-react';
+import { login, register } from '@/routes';
 
 export default function Welcome() {
+    const { demo } = usePage<{ demo: boolean }>().props;
+
     return (
         <>
             <Head title="Trainet" />
@@ -30,7 +33,7 @@ export default function Welcome() {
                         <span className="text-lg font-bold tracking-tight">Trainet</span>
                     </div>
                     <Link
-                        href="/personas"
+                        href={login()}
                         className="rounded-full px-4 py-2 text-sm font-medium text-white/80 transition-colors hover:text-white"
                     >
                         Log in
@@ -56,17 +59,25 @@ export default function Welcome() {
 
                     <div className="space-y-3">
                         <Link
-                            href="/personas"
+                            href={register()}
                             className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-primary text-base font-semibold text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-[0.98]"
                         >
                             Get Started <ArrowRight className="size-4" />
                         </Link>
                         <Link
-                            href="/personas"
+                            href={login()}
                             className="block text-center text-sm font-medium text-white/80 transition-colors hover:text-white"
                         >
                             Log in
                         </Link>
+                        {demo && (
+                            <Link
+                                href="/personas"
+                                className="block pt-2 text-center text-xs text-white/40 transition-colors hover:text-white/70"
+                            >
+                                Demo: sign in as a persona
+                            </Link>
+                        )}
                     </div>
                 </main>
             </div>
