@@ -9,6 +9,7 @@ import { mediaUrl } from '@/lib/media';
 import { SectionCard } from '@/components/trainet/section-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { NutritionTargets } from '@/types';
@@ -72,17 +73,13 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
         router.get('/app/nutrition', { date: d.toISOString().slice(0, 10) }, { preserveState: true });
     };
 
-    const macro = (label: string, value: number, target: number | null | undefined, unit = 'g') => (
-        <div className="space-y-1.5" key={label}>
-            <div className="flex justify-between text-xs">
-                <span className="font-medium">{label}</span>
-                <span className="text-muted-foreground">
-                    {Math.round(value)}{unit} / {target ?? '—'}{unit}
-                </span>
-            </div>
-            <Progress value={target ? Math.min(100, (value / target) * 100) : 0} />
-        </div>
-    );
+    const macros: { label: string; value: number; target: number | null | undefined }[] = [
+        { label: 'Protein', value: totals.protein_g, target: targets?.protein_g },
+        { label: 'Carbs', value: totals.carbs_g, target: targets?.carbs_g },
+        { label: 'Fat', value: totals.fat_g, target: targets?.fat_g },
+    ];
+    const calorieTarget = targets?.calories ?? 0;
+    const caloriesLeft = calorieTarget - totals.calories;
 
     const remove = (itemId: number) =>
         router.delete(`/app/nutrition/items/${itemId}`, { preserveScroll: true });
@@ -109,38 +106,53 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
                     </Link>
                 </Button>
 
-                <SectionCard title="Today's energy">
-                    <div className="space-y-4">
-                        <div className="flex justify-center">
+                <Card>
+                    <CardContent className="p-5">
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                                <p className="text-lg font-bold">Daily calories</p>
+                                <p className="mt-0.5 text-sm text-muted-foreground">
+                                    {caloriesLeft >= 0
+                                        ? `${caloriesLeft.toLocaleString()} kcal left of ${calorieTarget ? calorieTarget.toLocaleString() : '—'}`
+                                        : `${Math.abs(caloriesLeft).toLocaleString()} kcal over ${calorieTarget.toLocaleString()}`}
+                                </p>
+                            </div>
                             <RingProgress
-                                value={
-                                    targets?.calories
-                                        ? Math.min(100, (totals.calories / targets.calories) * 100)
-                                        : 0
-                                }
-                                size={170}
-                                strokeWidth={12}
+                                value={calorieTarget ? (totals.calories / calorieTarget) * 100 : 0}
+                                size={92}
+                                strokeWidth={9}
+                                className="shrink-0"
                             >
-                                <div className="text-center">
-                                    <p className="text-3xl font-bold tabular-nums">
-                                        {Math.max(0, (targets?.calories ?? 0) - totals.calories).toLocaleString()}
-                                    </p>
-                                    <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                        kcal left
-                                    </p>
-                                    <p className="mt-1 text-xs text-muted-foreground">
-                                        {totals.calories.toLocaleString()} / {targets?.calories ?? '—'} kcal
-                                    </p>
-                                </div>
+                                <p className="text-xl font-bold tabular-nums">
+                                    {totals.calories.toLocaleString()}
+                                </p>
+                                <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                                    kcal
+                                </p>
                             </RingProgress>
                         </div>
-                        <div className="grid gap-3">
-                            {macro('Protein', totals.protein_g, targets?.protein_g)}
-                            {macro('Carbs', totals.carbs_g, targets?.carbs_g)}
-                            {macro('Fat', totals.fat_g, targets?.fat_g)}
+                        <div className="mt-4 grid grid-cols-3 gap-2">
+                            {macros.map((m) => (
+                                <div key={m.label} className="rounded-2xl bg-muted/50 px-2 py-3 text-center">
+                                    <p className="text-xs font-medium">{m.label}</p>
+                                    <RingProgress
+                                        value={m.target ? (m.value / m.target) * 100 : 0}
+                                        size={64}
+                                        strokeWidth={6}
+                                        className="mx-auto mt-2"
+                                    >
+                                        <span className="text-sm font-bold tabular-nums">
+                                            {Math.round(m.value)}g
+                                        </span>
+                                    </RingProgress>
+                                    <p className="mt-1.5 text-xs text-muted-foreground">
+                                        / {m.target ?? '—'}g
+                                    </p>
+                                </div>
+                            ))}
                         </div>
-                    </div>
-                </SectionCard>
+                    </CardContent>
+                </Card>
 
                 {/* Meals / Log / Goals tabs */}
                 <div className="grid grid-cols-3 gap-2">
