@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Apple, Camera, Check, ChevronLeft, ChevronRight, Droplets, Plus, Trash2, UtensilsCrossed } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '@/components/trainet/empty-state';
-import { FoodDetail, type FoodDetailData } from '@/components/trainet/food-detail';
+import type { FoodDetailData } from '@/components/trainet/food-detail';
 import { PlanMealConfirm } from '@/components/trainet/plan-meal-confirm';
 import { RingProgress } from '@/components/trainet/ring-progress';
 import { mediaUrl } from '@/lib/media';
@@ -65,7 +65,6 @@ const TABS: { value: Tab; label: string }[] = [
 export default function NutritionIndex({ date, targets, totals, logs, planDay, water }: Props) {
     const [tab, setTab] = useState<Tab>('meals');
     const [confirmMeal, setConfirmMeal] = useState<PlanMeal | null>(null);
-    const [detailFood, setDetailFood] = useState<FoodDetailData | null>(null);
     const isToday = date === new Date().toISOString().slice(0, 10);
     const shift = (days: number) => {
         const d = new Date(date + 'T00:00:00');
@@ -93,6 +92,12 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
             <div className="space-y-5 py-5">
                 <div className="flex items-center justify-between">
                     <h1 className="text-2xl font-bold tracking-tight">Nutrition</h1>
+                    <Link
+                        href="/app/nutrition/plan"
+                        className="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                    >
+                        Details
+                    </Link>
                 </div>
 
                 {/* Primary CTA — one tap to log */}
@@ -108,50 +113,141 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
 
                 <Card>
                     <CardContent className="p-5">
-                        <div className="flex items-center justify-between gap-4">
-                            <div className="min-w-0">
+                        <div className="flex items-center gap-4">
+                            {/* Left — title + big ring */}
+                            <div className="shrink-0">
                                 <p className="text-lg font-bold">Daily calories</p>
                                 <p className="mt-0.5 text-sm text-muted-foreground">
                                     {caloriesLeft >= 0
                                         ? `${caloriesLeft.toLocaleString()} kcal left of ${calorieTarget ? calorieTarget.toLocaleString() : '—'}`
                                         : `${Math.abs(caloriesLeft).toLocaleString()} kcal over ${calorieTarget.toLocaleString()}`}
                                 </p>
-                            </div>
-                            <RingProgress
-                                value={calorieTarget ? (totals.calories / calorieTarget) * 100 : 0}
-                                size={92}
-                                strokeWidth={9}
-                                className="shrink-0"
-                            >
-                                <p className="text-xl font-bold tabular-nums">
-                                    {totals.calories.toLocaleString()}
-                                </p>
-                                <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                                    kcal
-                                </p>
-                            </RingProgress>
-                        </div>
-                        <div className="mt-4 grid grid-cols-3 gap-2">
-                            {macros.map((m) => (
-                                <div key={m.label} className="rounded-2xl bg-muted/50 px-2 py-3 text-center">
-                                    <p className="text-xs font-medium">{m.label}</p>
-                                    <RingProgress
-                                        value={m.target ? (m.value / m.target) * 100 : 0}
-                                        size={64}
-                                        strokeWidth={6}
-                                        className="mx-auto mt-2"
-                                    >
-                                        <span className="text-sm font-bold tabular-nums">
-                                            {Math.round(m.value)}g
-                                        </span>
-                                    </RingProgress>
-                                    <p className="mt-1.5 text-xs text-muted-foreground">
-                                        / {m.target ?? '—'}g
+                                <RingProgress
+                                    value={calorieTarget ? (totals.calories / calorieTarget) * 100 : 0}
+                                    size={110}
+                                    strokeWidth={11}
+                                    className="mt-3"
+                                >
+                                    <p className="text-2xl font-bold tabular-nums">
+                                        {totals.calories.toLocaleString()}
                                     </p>
-                                </div>
-                            ))}
+                                    <p className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                                        kcal
+                                    </p>
+                                </RingProgress>
+                            </div>
+                            {/* Right — macro tiles */}
+                            <div className="grid min-w-0 flex-1 grid-cols-3 gap-2 self-stretch">
+                                {macros.map((m) => (
+                                    <div
+                                        key={m.label}
+                                        className="flex flex-col items-center justify-center rounded-2xl bg-muted/50 px-2 py-3 text-center"
+                                    >
+                                        <p className="text-xs font-medium">{m.label}</p>
+                                        <RingProgress
+                                            value={m.target ? (m.value / m.target) * 100 : 0}
+                                            size={56}
+                                            strokeWidth={6}
+                                            className="mt-2"
+                                        >
+                                            <span className="text-xs font-bold tabular-nums">
+                                                {Math.round(m.value)}g
+                                            </span>
+                                        </RingProgress>
+                                        <p className="mt-1.5 text-xs text-muted-foreground">
+                                            / {m.target ?? '—'}g
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </CardContent>
+
+                    {tab === 'meals' && planDay && (
+                        <div className="space-y-3 border-t px-5 py-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                    On your plan — {planDay.title}
+                                </p>
+                                <Button variant="ghost" size="sm" asChild>
+                                    <Link href="/app/nutrition/plan">Full plan</Link>
+                                </Button>
+                            </div>
+                            <div className="space-y-3">
+                                {planDay.meals.map((meal) => {
+                                    const logged = logs.find((l) => l.meal_name === meal.name);
+                                    const itemCount = meal.items.length;
+                                    const eatenCount = logged
+                                        ? (meal.logged_item_ids?.length ?? 0) || itemCount
+                                        : 0;
+                                    const eatenPct = itemCount
+                                        ? (eatenCount / itemCount) * 100
+                                        : logged ? 100 : 0;
+                                    const kcal = meal.items.reduce(
+                                        (s, i) => s + (i.food ? Math.round((i.food.calories * (i.portion ? i.portion.grams * i.quantity : i.quantity * 100)) / 100) : 0),
+                                        0,
+                                    );
+                                    return (
+                                        <div key={meal.id} className="flex items-center gap-3">
+                                            <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted text-muted-foreground">
+                                                {meal.image_url ? (
+                                                    <img
+                                                        src={mediaUrl(meal.image_url) ?? ''}
+                                                        alt={meal.name}
+                                                        className="size-12 object-cover"
+                                                    />
+                                                ) : (
+                                                    <UtensilsCrossed className="size-5" />
+                                                )}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-semibold">
+                                                    {meal.name}
+                                                    {meal.time_hint && (
+                                                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                                                            {meal.time_hint}
+                                                        </span>
+                                                    )}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {meal.items.length} item{meal.items.length === 1 ? '' : 's'}
+                                                    {kcal > 0 && ` · ${kcal} kcal`}
+                                                </p>
+                                            </div>
+                                            {logged ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setConfirmMeal(meal)}
+                                                    className="shrink-0 transition-transform hover:scale-105"
+                                                    aria-label={`Edit ${meal.name}`}
+                                                >
+                                                    <RingProgress value={eatenPct} size={38} strokeWidth={3.5}>
+                                                        {eatenPct >= 100 ? (
+                                                            <Check className="size-4 text-primary" strokeWidth={3} />
+                                                        ) : (
+                                                            <span className="text-[10px] font-bold text-primary">
+                                                                {eatenCount}/{itemCount}
+                                                            </span>
+                                                        )}
+                                                    </RingProgress>
+                                                </button>
+                                            ) : (
+                                                <div className="flex shrink-0 gap-1.5">
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-8 rounded-full px-3 text-xs font-semibold"
+                                                        onClick={() => setConfirmMeal(meal)}
+                                                    >
+                                                        <Check className="mr-1 size-3.5" /> Ate it
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </Card>
 
                 {/* Meals / Log / Goals tabs */}
@@ -242,139 +338,6 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
                         ))}
                     </div>
                 </SectionCard>
-                )}
-
-                {tab === 'meals' && planDay && (
-                    <section className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <p className="text-sm font-semibold">
-                                {isToday ? "Today's meals" : 'Planned meals'} — {planDay.title}
-                            </p>
-                            <Button variant="ghost" size="sm" asChild>
-                                <Link href="/app/nutrition/plan">Full plan</Link>
-                            </Button>
-                        </div>
-                        <div className="space-y-3">
-                            {planDay.meals.map((meal) => {
-                                const logged = logs.find((l) => l.meal_name === meal.name);
-                                const itemCount = meal.items.length;
-                                const eatenCount = logged
-                                    ? (meal.logged_item_ids?.length ?? 0) || itemCount
-                                    : 0;
-                                const eatenPct = itemCount
-                                    ? (eatenCount / itemCount) * 100
-                                    : logged ? 100 : 0;
-                                const kcal = meal.items.reduce(
-                                    (s, i) => s + (i.food ? Math.round((i.food.calories * (i.portion ? i.portion.grams * i.quantity : i.quantity * 100)) / 100) : 0),
-                                    0,
-                                );
-                                return (
-                                    <div key={meal.id} className="overflow-hidden rounded-2xl bg-card ring-1 ring-border">
-                                        <div className="flex items-center gap-3 p-3">
-                                            <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted text-muted-foreground">
-                                                {meal.image_url ? (
-                                                    <img
-                                                        src={mediaUrl(meal.image_url) ?? ''}
-                                                        alt={meal.name}
-                                                        className="size-14 object-cover"
-                                                    />
-                                                ) : (
-                                                    <UtensilsCrossed className="size-5" />
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-semibold">
-                                                    {meal.name}
-                                                    {meal.time_hint && (
-                                                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                                                            {meal.time_hint}
-                                                        </span>
-                                                    )}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {meal.items.length} item{meal.items.length === 1 ? '' : 's'}
-                                                    {kcal > 0 && ` · ${kcal} kcal`}
-                                                </p>
-                                            </div>
-                                            {logged ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setConfirmMeal(meal)}
-                                                    className="shrink-0 transition-transform hover:scale-105"
-                                                    aria-label={`Edit ${meal.name}`}
-                                                >
-                                                    <RingProgress
-                                                        value={eatenPct}
-                                                        size={38}
-                                                        strokeWidth={3.5}
-                                                    >
-                                                        {eatenPct >= 100 ? (
-                                                            <Check className="size-4 text-primary" strokeWidth={3} />
-                                                        ) : (
-                                                            <span className="text-[10px] font-bold text-primary">
-                                                                {eatenCount}/{itemCount}
-                                                            </span>
-                                                        )}
-                                                    </RingProgress>
-                                                </button>
-                                            ) : (
-                                                <div className="flex shrink-0 gap-1.5">
-                                                    <Button
-                                                        size="sm"
-                                                        className="h-8 rounded-full px-3 text-xs font-semibold"
-                                                        onClick={() => setConfirmMeal(meal)}
-                                                    >
-                                                        <Check className="mr-1 size-3.5" /> Ate it
-                                                    </Button>
-                                                    <Button size="sm" variant="outline" className="h-8 rounded-full px-3 text-xs font-semibold" asChild>
-                                                        <Link href={`/app/nutrition/log?meal=${encodeURIComponent(meal.name)}&date=${date}`}>
-                                                            <Camera className="mr-1 size-3.5" /> Log
-                                                        </Link>
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {meal.items.length > 0 && (
-                                            <div className="divide-y border-t">
-                                                {meal.items.map((item) => (
-                                                    <div key={item.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-                                                        <button
-                                                            type="button"
-                                                            className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                                                            onClick={() => item.food && setDetailFood(item.food)}
-                                                        >
-                                                            <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted text-muted-foreground">
-                                                                {item.food?.image_url ? (
-                                                                    <img
-                                                                        src={mediaUrl(item.food.image_url) ?? undefined}
-                                                                        alt=""
-                                                                        className="size-8 object-cover"
-                                                                    />
-                                                                ) : (
-                                                                    <UtensilsCrossed className="size-3.5" />
-                                                                )}
-                                                            </span>
-                                                            <span className="min-w-0 truncate">
-                                                                {item.food?.name ?? item.recipe?.name ?? 'Item'}
-                                                                <span className="text-xs text-muted-foreground">
-                                                                    {' '}· {item.quantity} × {item.portion?.label ?? '100 g'}
-                                                                </span>
-                                                            </span>
-                                                        </button>
-                                                        <span className="shrink-0 text-xs text-muted-foreground">
-                                                            {item.food
-                                                                ? `${Math.round((item.food.calories * (item.portion ? item.portion.grams * item.quantity : item.quantity * 100)) / 100)} kcal`
-                                                                : '—'}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </section>
                 )}
 
                 {tab === 'meals' && !planDay && (
@@ -504,8 +467,6 @@ export default function NutritionIndex({ date, targets, totals, logs, planDay, w
                 onClose={() => setConfirmMeal(null)}
             />
 
-            {/* Food detail dialog */}
-            <FoodDetail food={detailFood} onClose={() => setDetailFood(null)} />
         </>
     );
 }
