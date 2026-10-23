@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'laravel/react-starter-kit',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '77bc8f840599244da4a9984b27463cb2b938ae0a',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -137,7 +137,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../fakerphp/faker',
             'aliases' => array(),
-            'dev_requirement' => true,
+            'dev_requirement' => false,
         ),
         'fidry/cpu-core-counter' => array(
             'pretty_version' => '1.4.1',
@@ -475,6 +475,15 @@
                 0 => '*',
             ),
         ),
+        'laminas/laminas-diactoros' => array(
+            'pretty_version' => '3.9.0',
+            'version' => '3.9.0.0',
+            'reference' => '4ab9fe10869ac0cd46fa78e641b6d0f4389bc6b4',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../laminas/laminas-diactoros',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'larastan/larastan' => array(
             'pretty_version' => 'v3.13.0',
             'version' => '3.13.0.0',
@@ -538,6 +547,15 @@
             'aliases' => array(),
             'dev_requirement' => true,
         ),
+        'laravel/octane' => array(
+            'pretty_version' => 'v2.22.0',
+            'version' => '2.22.0.0',
+            'reference' => 'c49ff458e94bf14b382f6414c6b9ddb39ac82b28',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../laravel/octane',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'laravel/pail' => array(
             'pretty_version' => 'v1.2.7',
             'version' => '1.2.7.0',
@@ -584,9 +602,9 @@
             'dev_requirement' => false,
         ),
         'laravel/react-starter-kit' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '77bc8f840599244da4a9984b27463cb2b938ae0a',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -1058,6 +1076,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '1.1',
+                1 => '^1.0',
             ),
         ),
         'psr/http-message' => array(
@@ -1073,6 +1092,7 @@
             'dev_requirement' => false,
             'provided' => array(
                 0 => '2.0',
+                1 => '^1.1 || ^2.0',
             ),
         ),
         'psr/log' => array(
@@ -1563,6 +1583,15 @@
             'reference' => 'fe727d4888a92ac9200a2c1b8e0a995b6022afa7',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/property-info',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'symfony/psr-http-message-bridge' => array(
+            'pretty_version' => 'v8.1.9',
+            'version' => '8.1.9.0',
+            'reference' => 'cfa8f3ac693fec234a91d8745b45ed9a81a0b799',
+            'type' => 'symfony-bridge',
+            'install_path' => __DIR__ . '/../symfony/psr-http-message-bridge',
             'aliases' => array(),
             'dev_requirement' => false,
         ),

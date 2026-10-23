@@ -276,7 +276,7 @@ export default function ClientToday({
                         </Link>
                     </div>
                     <div className="space-y-4 rounded-2xl bg-card p-4 ring-1 ring-border">
-                        <div className="grid grid-cols-[auto_1fr_1fr_1fr] gap-x-2 gap-y-2">
+                        <div className="grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-x-2 gap-y-2">
                             {/* Labels row — all vertically aligned */}
                             <div className="self-end space-y-1">
                                 <p className="text-xl leading-tight font-bold">

@@ -28,9 +28,9 @@ export function RingProgress({
     return (
         <div
             className={cn('relative inline-flex items-center justify-center', className)}
-            style={{ width: size, height: size }}
+            style={{ width: '100%', maxWidth: size, aspectRatio: '1 / 1' }}
         >
-            <svg width={size} height={size} className="-rotate-90">
+            <svg viewBox={`0 0 ${size} ${size}`} className="h-auto w-full -rotate-90">
                 <circle
                     cx={size / 2}
                     cy={size / 2}
