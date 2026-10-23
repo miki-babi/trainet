@@ -3,5 +3,8 @@
 # and prepends boot steps the base image is missing:
 #   - /var/log/nginx must exist or nginx exits with "could not open error log file"
 #   - the sqlite file must exist before migrations, and storage must be writable
+[variables]
+NIXPACKS_NODE_VERSION = "22"
+
 [start]
-cmd = "mkdir -p /var/log/nginx && touch database/database.sqlite && chmod -R a+rwX storage bootstrap/cache database && php artisan config:cache && php artisan storage:link && php artisan migrate --force && node /assets/scripts/prestart.mjs /assets/nginx.template.conf /nginx.conf && (php-fpm -y /assets/php-fpm.conf & nginx -c /nginx.conf)"
+cmd = "mkdir -p /var/log/nginx database && touch database/database.sqlite && chmod -R a+rwX storage bootstrap/cache database && php artisan config:cache && php artisan storage:link && php artisan migrate --force && node /assets/scripts/prestart.mjs /assets/nginx.template.conf /nginx.conf && (php-fpm -y /assets/php-fpm.conf & nginx -c /nginx.conf)"
