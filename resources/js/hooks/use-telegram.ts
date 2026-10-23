@@ -1,8 +1,29 @@
-import { usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { applySafeAreas, getTg, isInTelegram } from '@/lib/telegram';
 
 type SharedTelegram = { enabled: boolean; linked: boolean };
+
+type BootPage = {
+    props?: {
+        auth?: { user: { id: number } | null };
+        telegram?: SharedTelegram;
+    };
+};
+
+/**
+ * Shared props for the initial page, parsed from the data-page JSON on the
+ * Inertia root element. usePage() isn't available here because this hook is
+ * mounted outside the Inertia component tree.
+ */
+function bootPageProps(): BootPage['props'] {
+    try {
+        const raw = document.getElementById('app')?.dataset.page;
+
+        return raw ? (JSON.parse(raw) as BootPage).props : undefined;
+    } catch {
+        return undefined;
+    }
+}
 
 const SAFE_AREA_EVENTS = [
     'safeAreaChanged',
@@ -51,22 +72,19 @@ export function useTelegram(): void {
  * their Telegram identity linked instead.
  */
 export function useTelegramAutoAuth(): void {
-    const { auth, telegram } = usePage<{
-        auth: { user: { id: number } | null };
-        telegram: SharedTelegram;
-    }>().props;
-
     const attempted = useRef(false);
 
     useEffect(() => {
         const tg = getTg();
+        const props = bootPageProps();
+        const telegram = props?.telegram;
 
         if (!tg?.initData || !telegram?.enabled || attempted.current) {
             return;
         }
 
-        const shouldLink = auth.user && !telegram.linked;
-        const shouldLogin = !auth.user;
+        const shouldLink = props?.auth?.user && !telegram.linked;
+        const shouldLogin = !props?.auth?.user;
 
         if (!shouldLogin && !shouldLink) {
             return;
@@ -104,7 +122,7 @@ export function useTelegramAutoAuth(): void {
             }
             // Link-only: silent — shared prop refreshes on next visit.
         });
-    }, [auth.user, telegram?.enabled, telegram?.linked]);
+    }, []);
 }
 
 /**
